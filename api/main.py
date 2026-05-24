@@ -113,9 +113,23 @@ def predict_churn(customer_data: CustomerData):
         else "Low"
     )
 
-    # Return response
+    # Convert numeric prediction to human-readable label
+    prediction_label = "Churn" if prediction == 1 else "No Churn"
+
+    # Generate business recommendation based on risk level
+    recommendation = (
+        "Customer is at high risk of churn. Consider retention actions."
+        if risk_level == "High"
+        else "Customer has moderate churn risk. Monitor behavior and engagement."
+        if risk_level == "Medium"
+        else "Customer has low churn risk."
+    )
+
+    # Return enhanced response with label and recommendation
     return {
-        "prediction": int(prediction),
-        "churn_probability": round(float(prediction_probability), 4),
-        "risk_level": risk_level
+        "prediction": int(prediction),                      # Raw prediction (0 or 1)
+        "prediction_label": prediction_label,              # Readable label ("Churn" or "No Churn")
+        "churn_probability": round(float(prediction_probability), 4),  # Probability as percentage
+        "risk_level": risk_level,                          # Categorical risk (High/Medium/Low)
+        "recommendation": recommendation                   # Actionable business advice
     }
