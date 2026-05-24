@@ -1,0 +1,20 @@
+services:
+  # FastAPI backend service
+  api:
+    build:
+      context: .                    # Use current directory as build context
+      dockerfile: Dockerfile.api    # Specific Dockerfile for API
+    container_name: churn-api       # Name of the container
+    ports:
+      - "8000:8000"                 # Map host port 8000 to container port 8000
+
+  # Streamlit frontend service
+  dashboard:
+    build:
+      context: .                    # Use current directory as build context
+      dockerfile: Dockerfile.streamlit  # Specific Dockerfile for Streamlit
+    container_name: churn-dashboard # Name of the container
+    ports:
+      - "8501:8501"                 # Map host port 8501 to container port 8501
+    depends_on:
+      - api                         # Wait for API service to start first

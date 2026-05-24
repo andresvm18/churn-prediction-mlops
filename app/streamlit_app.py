@@ -2,7 +2,7 @@ import requests
 import streamlit as st
 
 # FastAPI endpoint URL (local server)
-API_URL = "http://127.0.0.1:8000/predict"
+API_URL = "http://api:8000/predict"
 
 # Configure Streamlit page settings
 st.set_page_config(

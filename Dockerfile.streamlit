@@ -1,0 +1,27 @@
+# Use lightweight Python 3.11 as base image
+FROM python:3.11-slim
+
+# Set working directory inside container
+WORKDIR /app
+
+# Copy requirements file first (for better caching)
+COPY requirements.txt .
+
+# Upgrade pip to latest version
+RUN pip install --upgrade pip
+
+# Install Python dependencies
+RUN pip install -r requirements.txt
+
+# Copy all application code into container
+COPY . .
+
+# Expose port 8501 for Streamlit (default Streamlit port)
+EXPOSE 8501
+
+# Command to run the Streamlit application
+# streamlit run - launch the Streamlit app
+# app/streamlit_app.py - path to the Streamlit file
+# --server.address=0.0.0.0 - listen on all network interfaces
+# --server.port=8501 - use port 8501
+CMD ["streamlit", "run", "app/streamlit_app.py", "--server.address=0.0.0.0", "--server.port=8501"]
