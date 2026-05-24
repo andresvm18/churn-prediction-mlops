@@ -13,3 +13,5 @@ imbalanced-learn
 xgboost
 fastapi
 uvicorn
+streamlit
+requests
