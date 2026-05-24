@@ -10,3 +10,4 @@ notebook
 matplotlib
 seaborn
 imbalanced-learn
+xgboost

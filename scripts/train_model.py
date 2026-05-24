@@ -6,6 +6,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
 from imblearn.over_sampling import SMOTE
+from xgboost import XGBClassifier
 
 # Load dataset
 customer_churn_data = pd.read_excel("data/raw/telco_churn.xlsx")
@@ -88,11 +89,15 @@ features_train_balanced, target_train_balanced = smote_balancer.fit_resample(
     target_train      # Original imbalanced labels (y)
 )
 
-# Train model
-churn_classifier = RandomForestClassifier(
-    n_estimators=100,      # Number of trees in the forest
-    random_state=42,       # Fixed seed for reproducibility
-    class_weight="balanced"  # Automatically adjust for imbalanced classes
+# Initialize XGBoost classifier with optimized hyperparameters
+churn_classifier = XGBClassifier(
+    n_estimators=200,        # Number of boosting rounds (trees)
+    max_depth=6,             # Maximum tree depth (controls overfitting)
+    learning_rate=0.05,      # Step size shrinkage (lower = more robust)
+    subsample=0.8,           # Fraction of samples used per tree (prevents overfitting)
+    colsample_bytree=0.8,    # Fraction of features used per tree (adds randomness)
+    random_state=42,         # Fixed seed for reproducibility
+    eval_metric="logloss"    # Evaluation metric for binary classification
 )
 
 churn_classifier.fit(features_train_balanced, target_train_balanced)  # Train the model
