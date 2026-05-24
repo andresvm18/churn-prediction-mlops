@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
+from imblearn.over_sampling import SMOTE
 
 # Load dataset
 customer_churn_data = pd.read_excel("data/raw/telco_churn.xlsx")
@@ -28,15 +29,27 @@ target_column = "Churn Value"
 # Remove leakage columns (data not available at prediction time) and "useless data" 
 columns_to_remove = [
     target_column,
+
+    # Leakage columns
     "Churn Label",
     "Churn Score",
     "Churn Reason",
-    "CustomerID",
     "CLTV",
-    "Count",
+
+    # Identifier columns
+    "CustomerID",
+
+    # Geographic columns
+    "Country",
+    "State",
+    "City",
+    "Zip Code",
     "Lat Long",
     "Latitude",
-    "Longitude"
+    "Longitude",
+
+    # Constant columns
+    "Count"
 ]
 
 feature_data = customer_churn_data.drop(columns=columns_to_remove)  # Input data (X)
@@ -65,6 +78,16 @@ features_train, features_test, target_train, target_test = train_test_split(
     stratify=target_data  # Preserve class balance across splits
 )
 
+
+# Balance training data using SMOTE (Synthetic Minority Over-sampling Technique)
+smote_balancer = SMOTE(random_state=42)  # Initialize with fixed seed for reproducibility
+
+# Create synthetic samples for the minority class to balance the dataset
+features_train_balanced, target_train_balanced = smote_balancer.fit_resample(
+    features_train,   # Original imbalanced features (X)
+    target_train      # Original imbalanced labels (y)
+)
+
 # Train model
 churn_classifier = RandomForestClassifier(
     n_estimators=100,      # Number of trees in the forest
@@ -72,7 +95,7 @@ churn_classifier = RandomForestClassifier(
     class_weight="balanced"  # Automatically adjust for imbalanced classes
 )
 
-churn_classifier.fit(features_train, target_train)  # Train the model
+churn_classifier.fit(features_train_balanced, target_train_balanced)  # Train the model
 
 # Generate predictions
 target_predictions = churn_classifier.predict(features_test)  # Predict on test set

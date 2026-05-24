@@ -6,3 +6,7 @@ seaborn
 joblib
 jupyter
 openpyxl
+notebook
+matplotlib
+seaborn
+imbalanced-learn
