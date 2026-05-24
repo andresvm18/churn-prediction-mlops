@@ -3,7 +3,6 @@ import joblib
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
 from imblearn.over_sampling import SMOTE
 from xgboost import XGBClassifier
@@ -15,11 +14,11 @@ print("\nDataset loaded successfully\n")
 print(customer_churn_data.head())
 
 # Clean column names
-customer_churn_data.columns = customer_churn_data.columns.str.strip()  # Remove leading/trailing spaces
+customer_churn_data.columns = customer_churn_data.columns.str.strip()
 
 # Replace empty values
 for column_name in customer_churn_data.columns:
-    customer_churn_data[column_name] = customer_churn_data[column_name].replace(" ", pd.NA)  # Convert spaces to NA
+    customer_churn_data[column_name] = customer_churn_data[column_name].replace(" ", pd.NA)
 
 # Fill missing values
 customer_churn_data = customer_churn_data.fillna("Unknown")
@@ -27,7 +26,7 @@ customer_churn_data = customer_churn_data.fillna("Unknown")
 # Define target column
 target_column = "Churn Value"
 
-# Remove leakage columns (data not available at prediction time) and "useless data" 
+# Remove leakage, identifier, geographic, and constant columns
 columns_to_remove = [
     target_column,
 
@@ -53,57 +52,83 @@ columns_to_remove = [
     "Count"
 ]
 
-feature_data = customer_churn_data.drop(columns=columns_to_remove)  # Input data (X)
-target_data = customer_churn_data[target_column]  # Correct answer (y)
+# Separate features and target
+feature_data = customer_churn_data.drop(columns=columns_to_remove)
+target_data = customer_churn_data[target_column]
+
+# Define categorical columns used by both training and API
+categorical_columns = [
+    "Gender",
+    "Partner",
+    "Dependents",
+    "Phone Service",
+    "Multiple Lines",
+    "Internet Service",
+    "Online Security",
+    "Online Backup",
+    "Device Protection",
+    "Tech Support",
+    "Streaming TV",
+    "Streaming Movies",
+    "Contract",
+    "Paperless Billing",
+    "Payment Method"
+]
 
 # Encode categorical features
 categorical_encoders = {}
 
-for column_name in feature_data.columns:
-    if feature_data[column_name].dtype == "object":  # If column is categorical/text
-        column_encoder = LabelEncoder()  # Initialize the encoder
-        # Convert to string, fit encoder, and transform to numbers
-        feature_data[column_name] = column_encoder.fit_transform(feature_data[column_name].astype(str))
-        categorical_encoders[column_name] = column_encoder  # Save encoder for future use
+for column_name in categorical_columns:
+    column_encoder = LabelEncoder()
+
+    feature_data[column_name] = column_encoder.fit_transform(
+        feature_data[column_name].astype(str)
+    )
+
+    categorical_encoders[column_name] = column_encoder
 
 # Convert all features to numeric
-feature_data = feature_data.apply(pd.to_numeric, errors="coerce")  # Convert non-numeric to NaN
-feature_data = feature_data.fillna(0)  # Replace NaN with 0
+feature_data = feature_data.apply(pd.to_numeric, errors="coerce")
+feature_data = feature_data.fillna(0)
 
 # Split dataset
 features_train, features_test, target_train, target_test = train_test_split(
-    feature_data,      # Input features (X)
-    target_data,       # Target labels (y)
-    test_size=0.2,     # 20% for testing, 80% for training
-    random_state=42,   # Fixed seed for reproducibility
-    stratify=target_data  # Preserve class balance across splits
+    feature_data,
+    target_data,
+    test_size=0.2,
+    random_state=42,
+    stratify=target_data
 )
 
+# Balance training data using SMOTE
+smote_balancer = SMOTE(random_state=42)
 
-# Balance training data using SMOTE (Synthetic Minority Over-sampling Technique)
-smote_balancer = SMOTE(random_state=42)  # Initialize with fixed seed for reproducibility
-
-# Create synthetic samples for the minority class to balance the dataset
 features_train_balanced, target_train_balanced = smote_balancer.fit_resample(
-    features_train,   # Original imbalanced features (X)
-    target_train      # Original imbalanced labels (y)
+    features_train,
+    target_train
 )
 
-# Initialize XGBoost classifier with optimized hyperparameters
+print("\nTraining class distribution before SMOTE:")
+print(target_train.value_counts())
+
+print("\nTraining class distribution after SMOTE:")
+print(target_train_balanced.value_counts())
+
+# Train XGBoost model
 churn_classifier = XGBClassifier(
-    n_estimators=200,        # Number of boosting rounds (trees)
-    max_depth=6,             # Maximum tree depth (controls overfitting)
-    learning_rate=0.05,      # Step size shrinkage (lower = more robust)
-    subsample=0.8,           # Fraction of samples used per tree (prevents overfitting)
-    colsample_bytree=0.8,    # Fraction of features used per tree (adds randomness)
-    random_state=42,         # Fixed seed for reproducibility
-    eval_metric="logloss"    # Evaluation metric for binary classification
+    n_estimators=200,
+    max_depth=6,
+    learning_rate=0.05,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    random_state=42,
+    eval_metric="logloss"
 )
 
-churn_classifier.fit(features_train_balanced, target_train_balanced)  # Train the model
+churn_classifier.fit(features_train_balanced, target_train_balanced)
 
 # Generate predictions
-target_predictions = churn_classifier.predict(features_test)  # Predict on test set
+target_predictions = churn_classifier.predict(features_test)
 
 # Evaluate model
 model_accuracy = accuracy_score(target_test, target_predictions)
@@ -113,12 +138,11 @@ print("MODEL RESULTS")
 print("==============================")
 
 print(f"\nAccuracy: {model_accuracy:.4f}\n")
-
-print(classification_report(target_test, target_predictions))  # Precision, recall, f1-score
+print(classification_report(target_test, target_predictions))
 
 # Save model artifacts
-joblib.dump(churn_classifier, "src/models/churn_model.pkl")  # Save trained model
-joblib.dump(categorical_encoders, "src/models/label_encoders.pkl")  # Save encoders
+joblib.dump(churn_classifier, "src/models/churn_model.pkl")
+joblib.dump(categorical_encoders, "src/models/label_encoders.pkl")
 
 print("\nModel saved successfully")
 print("Encoders saved successfully")

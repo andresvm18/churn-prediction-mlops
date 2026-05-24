@@ -11,3 +11,5 @@ matplotlib
 seaborn
 imbalanced-learn
 xgboost
+fastapi
+uvicorn
