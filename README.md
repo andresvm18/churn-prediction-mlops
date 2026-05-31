@@ -96,7 +96,8 @@ Services:
 ~~~
 customer-churn-prediction/ 
 │ 
-├── api/ 
+├── api/
+│   ├── __init__.py 
 │   ├── main.py 
 │   ├── model_service.py
 │   └── schemas.py
@@ -120,14 +121,19 @@ customer-churn-prediction/
 │ 
 ├── src/ 
 │   ├── data/
-│   ├── models/ 
-│   └── tests/
+│   └── models/ 
+│
+├── tests/
+│   ├── test_api.py
+│   ├── test_model.py
+│   └── test_preprocessing.py
 │
 ├── .dockerignore
 ├── .gitignore
 ├── docker-compose.yml 
 ├── Dockerfile.api 
 ├── Dockerfile.streamlit 
+├── pytest.ini
 ├── README.md
 ├── requirements-prod.txt 
 └── requirements.txt 
