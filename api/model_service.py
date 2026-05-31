@@ -1,9 +1,13 @@
 import joblib
 import pandas as pd
+import shap  # SHAP library for model interpretability
 
 # Load trained model and encoders from disk
 churn_model = joblib.load("src/models/churn_model.pkl")
 categorical_encoders = joblib.load("src/models/label_encoders.pkl")
+
+# Create SHAP explainer once during application startup
+model_explainer = shap.TreeExplainer(churn_model)
 
 # Define categorical columns that need encoding (consistent with training)
 CATEGORICAL_COLUMNS = [
@@ -80,6 +84,32 @@ def get_recommendation(risk_level):
         return "Customer has moderate churn risk. Monitor behavior and engagement."
     return "Customer has low churn risk."
 
+
+# Identify the most influential features for a prediction
+def get_top_factors(encoded_data):
+
+    # Calculate SHAP values for the encoded input
+    shap_values = model_explainer.shap_values(encoded_data)
+
+    # Create dataframe with features and their absolute impact
+    feature_impacts = pd.DataFrame({
+        "feature": encoded_data.columns,
+        "impact": abs(shap_values[0])
+    })
+
+    # Sort by impact and get top 3 features
+    top_features = (
+        feature_impacts
+        .sort_values(
+            by="impact",
+            ascending=False
+        )
+        .head(3)
+    )
+
+    # Return only the feature names
+    return top_features["feature"].tolist()
+
 # Main prediction function orchestrating all steps
 def predict_customer_churn(customer_data):
     input_data = build_input_dataframe(customer_data)  # Step 1: Build DataFrame
@@ -91,12 +121,14 @@ def predict_customer_churn(customer_data):
     risk_level = get_risk_level(churn_probability)     # Step 5: Determine risk
     prediction_label = "Churn" if prediction == 1 else "No Churn"  # Step 6: Human-readable label
     recommendation = get_recommendation(risk_level)    # Step 7: Generate advice
-    
+    top_factors = get_top_factors(encoded_data)     # Step 8:Get top 3 most influential features for this prediction
+
     # Step 8: Return formatted response
     return {
         "prediction": int(prediction),
         "prediction_label": prediction_label,
         "churn_probability": round(float(churn_probability), 4),
         "risk_level": risk_level,
-        "recommendation": recommendation
+        "recommendation": recommendation,
+        "top_factors": top_factors
     }
