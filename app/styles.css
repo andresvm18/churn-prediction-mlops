@@ -1,0 +1,159 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap');
+
+html,
+body,
+[class*="css"],
+.stApp {
+    font-family: 'Inter', sans-serif;
+    background: #f4f1ec !important;
+    color: #16130f !important;
+}
+
+/* Hide Streamlit UI */
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+#MainMenu {
+    visibility: hidden;
+}
+
+footer {
+    visibility: hidden;
+}
+
+header {
+    visibility: hidden;
+}
+
+/* Variables */
+:root {
+    --bg: #f4f1ec;
+    --surface: #ffffff;
+    --surface-2: #f0ece5;
+    --border: #e3ddd4;
+    --text-hi: #16130f;
+    --text-mid: #5a5449;
+    --text-lo: #9e9488;
+    --accent: #16130f;
+    --accent-fg: #ffffff;
+}
+
+/* Layout */
+.block-container {
+    padding: 2rem 3rem 4rem;
+    max-width: 1300px;
+}
+
+/* Header */
+.ci-header-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.ci-logo-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.ci-wordmark {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-hi);
+}
+
+.ci-eyebrow {
+    margin: 0;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-lo);
+}
+
+/* Sections */
+.ci-section {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-lo);
+    margin: 1.5rem 0 0.8rem;
+}
+
+/* Inputs */
+.stSelectbox > div > div,
+.stNumberInput input {
+    border-radius: 10px !important;
+    border: 1px solid var(--border) !important;
+    background: var(--surface) !important;
+    color: var(--text-hi) !important;
+}
+
+/* Button */
+.stButton > button {
+    width: 100%;
+    background: var(--accent) !important;
+    color: var(--accent-fg) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.75rem 1rem !important;
+    font-family: 'Syne', sans-serif !important;
+    font-weight: 600 !important;
+}
+
+/* Risk panel */
+.ci-risk-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.ci-risk-head {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-lo);
+    margin-bottom: 0.8rem;
+}
+
+.ci-risk-row {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-mid);
+    font-size: 0.85rem;
+}
+
+.ci-risk-row:last-child {
+    border-bottom: none;
+}
+
+/* Divider */
+.ci-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+}
+
+/* Footer */
+.ci-footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--text-lo);
+}

@@ -18,3 +18,5 @@ services:
       - "8501:8501"                 # Map host port 8501 to container port 8501
     depends_on:
       - api                         # Wait for API service to start first
+    environment:
+      - API_URL=http://api:8000/predict
