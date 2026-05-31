@@ -1,51 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap');
 
-html,
-body,
-[class*="css"],
-.stApp {
-    font-family: 'Inter', sans-serif;
-    background: #f4f1ec !important;
-    color: #16130f !important;
+/* ─── Reset & Base ─── */
+html, body, [class*="css"], .stApp {
+    font-family: 'Outfit', sans-serif;
+    background: #f5f2ee !important;
+    color: #1a1714 !important;
 }
 
-/* Hide Streamlit UI */
-[data-testid="stToolbar"] {
-    display: none !important;
-}
-
-#MainMenu {
-    visibility: hidden;
-}
-
-footer {
-    visibility: hidden;
-}
-
-header {
-    visibility: hidden;
-}
-
-/* Variables */
 :root {
-    --bg: #f4f1ec;
-    --surface: #ffffff;
-    --surface-2: #f0ece5;
-    --border: #e3ddd4;
-    --text-hi: #16130f;
-    --text-mid: #5a5449;
-    --text-lo: #9e9488;
-    --accent: #16130f;
-    --accent-fg: #ffffff;
+    --bg:         #f5f2ee;
+    --bg-2:       #edeae4;
+    --surface:    #ffffff;
+    --surface-2:  #f8f6f2;
+    --surface-3:  #f0ece5;
+    --border:     #e2ddd6;
+    --border-hi:  #ccc8bf;
+    --text-hi:    #1a1714;
+    --text-mid:   #5c574f;
+    --text-lo:    #9c968d;
+    --accent:     #1a1714;
+    --accent-fg:  #ffffff;
+    --danger:     #c0392b;
+    --warn:       #d68910;
+    --ok:         #1e8449;
+    --radius:     12px;
+    --radius-sm:  8px;
+    --radius-lg:  18px;
 }
 
-/* Layout */
+/* ─── Hide Streamlit chrome ─── */
+[data-testid="stToolbar"],
+#MainMenu,
+footer,
+header { display: none !important; visibility: hidden !important; }
+
+/* ─── Layout ─── */
 .block-container {
-    padding: 2rem 3rem 4rem;
-    max-width: 1300px;
+    padding: 2.5rem 3rem 5rem !important;
+    max-width: 1350px !important;
 }
 
-/* Header */
+/* ─── Header ─── */
 .ci-header-wrap {
     display: flex;
     align-items: center;
@@ -56,104 +51,385 @@ header {
 }
 
 .ci-logo-mark {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
     background: var(--accent);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
+    flex-shrink: 0;
 }
 
+.ci-header-text { display: flex; flex-direction: column; gap: 2px; }
+
 .ci-wordmark {
-    font-family: 'Syne', sans-serif;
+    font-family: 'DM Serif Display', serif;
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: 400;
     margin: 0;
     color: var(--text-hi);
+    letter-spacing: -0.02em;
 }
 
 .ci-eyebrow {
     margin: 0;
-    font-size: 0.7rem;
+    font-size: 0.67rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.11em;
     color: var(--text-lo);
+    font-family: 'DM Mono', monospace;
 }
 
-/* Sections */
+.ci-header-badge {
+    margin-left: auto;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 0.68rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+/* ─── Section labels ─── */
 .ci-section {
-    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.67rem;
     font-weight: 600;
+    font-family: 'DM Mono', monospace;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     color: var(--text-lo);
-    margin: 1.5rem 0 0.8rem;
+    margin: 1.5rem 0 0.85rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
 }
 
-/* Inputs */
+/* ─── Tabs ─── */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0 !important;
+    background: var(--surface-3) !important;
+    border-radius: var(--radius) !important;
+    padding: 4px !important;
+    border: 1px solid var(--border) !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.stTabs [data-baseweb="tab"] {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 0.85rem !important;
+    color: var(--text-mid) !important;
+    border-radius: 9px !important;
+    padding: 0.45rem 1.2rem !important;
+    transition: all 0.18s ease !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+.stTabs [aria-selected="true"] {
+    color: var(--text-hi) !important;
+    background: var(--surface) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+}
+
+.stTabs [data-baseweb="tab-panel"] {
+    padding: 0 !important;
+}
+
+/* ─── Inputs ─── */
 .stSelectbox > div > div,
 .stNumberInput input {
-    border-radius: 10px !important;
+    border-radius: var(--radius-sm) !important;
     border: 1px solid var(--border) !important;
     background: var(--surface) !important;
     color: var(--text-hi) !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.88rem !important;
+    transition: border-color 0.18s, box-shadow 0.18s !important;
 }
 
-/* Button */
+.stSelectbox > div > div:focus-within,
+.stNumberInput input:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(26,23,20,0.08) !important;
+    outline: none !important;
+}
+
+.stSelectbox label,
+.stNumberInput label,
+.stSlider label,
+.stRadio > label {
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    color: var(--text-mid) !important;
+    letter-spacing: 0.01em !important;
+    margin-bottom: 4px !important;
+}
+
+/* Slider */
+[data-testid="stSlider"] > div > div > div {
+    background: var(--accent) !important;
+}
+
+/* Radio */
+.stRadio [data-testid="stMarkdownContainer"] p {
+    font-size: 0.85rem !important;
+    color: var(--text-mid) !important;
+}
+
+/* ─── Button ─── */
 .stButton > button {
     width: 100%;
     background: var(--accent) !important;
     color: var(--accent-fg) !important;
     border: none !important;
-    border-radius: 10px !important;
-    padding: 0.75rem 1rem !important;
-    font-family: 'Syne', sans-serif !important;
-    font-weight: 600 !important;
+    border-radius: var(--radius) !important;
+    padding: 0.8rem 1rem !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.9rem !important;
+    letter-spacing: 0.04em !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+    margin-top: 1rem !important;
 }
 
-/* Risk panel */
-.ci-risk-panel {
+.stButton > button:hover {
+    background: #2d2a26 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(26,23,20,0.18) !important;
+}
+
+.stButton > button:active {
+    transform: translateY(0) !important;
+}
+
+/* ─── Risk Card ─── */
+.ci-risk-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1rem;
-    margin-bottom: 1rem;
+    border-radius: var(--radius);
+    padding: 1.25rem 1rem;
+    text-align: center;
+    margin-bottom: 0.75rem;
 }
 
-.ci-risk-head {
-    font-size: 0.7rem;
-    font-weight: 700;
+.ci-risk-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.63rem;
+    font-family: 'DM Mono', monospace;
     text-transform: uppercase;
+    letter-spacing: 0.12em;
     color: var(--text-lo);
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.6rem;
 }
 
-.ci-risk-row {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-mid);
-    font-size: 0.85rem;
+.ci-risk-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.4rem;
+    font-weight: 400;
+    line-height: 1.1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
 }
 
-.ci-risk-row:last-child {
-    border-bottom: none;
+/* ─── Probability Card ─── */
+.ci-prob-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1rem;
+    text-align: center;
+    margin-bottom: 0.75rem;
 }
 
-/* Divider */
-.ci-divider {
+.ci-prob-label {
+    font-size: 0.63rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-lo);
+    margin-bottom: 0.5rem;
+}
+
+.ci-prob-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.8rem;
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 0.9rem;
+}
+
+.ci-prob-bar {
+    background: var(--surface-3);
+    border-radius: 999px;
+    height: 7px;
+    overflow: hidden;
+}
+
+.ci-prob-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─── Risk Factors ─── */
+.ci-risk-head {
+    font-size: 0.63rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-lo);
+    margin: 0.5rem 0 0.6rem;
+}
+
+.ci-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 0.75rem;
+}
+
+.ci-badge {
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text-hi);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+/* ─── Divider ─── */
+.ci-divider-light {
     border: none;
     border-top: 1px solid var(--border);
-    margin: 1.5rem 0;
+    margin: 0.75rem 0;
 }
 
-/* Footer */
+/* ─── Recommendation ─── */
+.ci-recommendation {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 0.9rem;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--text-mid);
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+}
+
+.ci-rec-icon { font-size: 0.95rem; flex-shrink: 0; margin-top: 1px; }
+
+/* ─── Empty state ─── */
+.ci-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    background: var(--surface);
+    border: 1px dashed var(--border-hi);
+    border-radius: var(--radius);
+    min-height: 200px;
+    margin-bottom: 0.75rem;
+}
+
+.ci-empty-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-lo);
+    margin-bottom: 0.25rem;
+}
+
+.ci-empty-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    color: var(--text-mid);
+    margin: 0;
+}
+
+.ci-empty-sub {
+    font-size: 0.78rem;
+    color: var(--text-lo);
+    margin: 0;
+    line-height: 1.55;
+}
+
+/* ─── Loading Button ─── */
+.ci-button-loading {
+    width: 100%;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    border-radius: var(--radius);
+    padding: 0.8rem 1rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 1rem;
+}
+
+.ci-spinner {
+    width: 15px;
+    height: 15px;
+    border: 2px solid var(--border-hi);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: ci-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes ci-spin { to { transform: rotate(360deg); } }
+
+/* ─── Footer ─── */
 .ci-footer {
     text-align: center;
     margin-top: 3rem;
-    padding-top: 1rem;
+    padding-top: 1.25rem;
     border-top: 1px solid var(--border);
-    font-size: 0.75rem;
+    font-size: 0.68rem;
+    font-family: 'DM Mono', monospace;
     color: var(--text-lo);
+    letter-spacing: 0.05em;
+}
+
+/* ─── Alert override ─── */
+.stAlert {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    color: var(--text-mid) !important;
+    font-size: 0.85rem !important;
 }
