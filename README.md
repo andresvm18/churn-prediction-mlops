@@ -96,6 +96,10 @@ Services:
 ~~~
 customer-churn-prediction/ 
 │ 
+├── .github/
+│   └── workflows/
+│       └── tests.yml
+│ 
 ├── api/
 │   ├── __init__.py 
 │   ├── main.py 
