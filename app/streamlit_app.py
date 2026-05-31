@@ -28,20 +28,47 @@ def svg(path_d: str, size: int = 14, stroke_w: float = 1.75) -> str:
     return (
         f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" '
         f'stroke="currentColor" stroke-width="{stroke_w}" '
-        f'stroke-linecap="round" stroke-linejoin="round">{path_d}</svg>'
+        f'stroke-linecap="round" stroke-linejoin="round">'
+        f"{path_d}</svg>"
     )
 
 
 ICONS = {
-    "trending-down": '<polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>',
-    "user": '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
-    "wifi": '<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/>',
+    "trending-down": (
+        '<polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>'
+        '<polyline points="17 18 23 18 23 12"/>'
+    ),
+    "user": (
+        '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>'
+        '<circle cx="12" cy="7" r="4"/>'
+    ),
+    "wifi": (
+        '<path d="M5 12.55a11 11 0 0 1 14.08 0"/>'
+        '<path d="M1.42 9a16 16 0 0 1 21.16 0"/>'
+    ),
     "shield": '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
-    "clock": '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
-    "dollar": '<line x1="12" y1="1" x2="12" y2="23"/><line x1="17" y1="5" x2="7" y2="19"/>',
-    "file": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
-    "alert-triangle": '<path d="M12 9v4"/><path d="M12 17h.01"/><path d="M12 3L3 21h18L12 3z"/>',
-    "bar-chart": '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    "clock": (
+        '<circle cx="12" cy="12" r="10"/>'
+        '<polyline points="12 6 12 12 16 14"/>'
+    ),
+    "dollar": (
+        '<line x1="12" y1="1" x2="12" y2="23"/>'
+        '<line x1="17" y1="5" x2="7" y2="19"/>'
+    ),
+    "file": (
+        '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
+        '<polyline points="14 2 14 8 20 8"/>'
+    ),
+    "alert-triangle": (
+        '<path d="M12 9v4"/>'
+        '<path d="M12 17h.01"/>'
+        '<path d="M12 3L3 21h18L12 3z"/>'
+    ),
+    "bar-chart": (
+        '<line x1="18" y1="20" x2="18" y2="10"/>'
+        '<line x1="12" y1="20" x2="12" y2="4"/>'
+        '<line x1="6" y1="20" x2="6" y2="14"/>'
+    ),
     "activity": '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
 }
 
@@ -102,7 +129,9 @@ with left_col:
 
     # ── Tab 2 · Services ─────────────────────────────────────────────────────
     with tab2:
-        st.html(f'<div class="ci-section">{ic("wifi", 13)} Connectivity</div>')
+        st.html(
+            f'<div class="ci-section">{ic("wifi", 13)} Connectivity</div>'
+        )
         c1, c2 = st.columns(2)
         with c1:
             phone_service = st.selectbox("Phone service", ["Yes", "No"])
@@ -117,13 +146,18 @@ with left_col:
             )
 
         if internet_service != "No":
-            st.html(f'<div class="ci-section">{ic("shield", 13)} Online add-ons</div>')
+            st.html(
+                f'<div class="ci-section">'
+                f'{ic("shield", 13)} Online add-ons</div>'
+            )
             c1, c2, c3 = st.columns(3)
             with c1:
                 online_security = st.selectbox("Online security", ["Yes", "No"])
                 online_backup = st.selectbox("Online backup", ["Yes", "No"])
             with c2:
-                device_protection = st.selectbox("Device protection", ["Yes", "No"])
+                device_protection = st.selectbox(
+                    "Device protection", ["Yes", "No"]
+                )
                 tech_support = st.selectbox("Tech support", ["Yes", "No"])
             with c3:
                 streaming_tv = st.selectbox("Streaming TV", ["Yes", "No"])
@@ -204,9 +238,9 @@ with right_col:
             f"""
         <div class="ci-prob-card">
             <div class="ci-prob-label">Churn Probability</div>
-
-    <div class="ci-prob-value" style="color:{risk_color};">{probability:.1f}%</div>
-
+            <div class="ci-prob-value" style="color:{risk_color};">
+                {probability:.1f}%
+            </div>
             <div class="ci-prob-bar">
                 <div class="ci-prob-bar-fill"
                      style="width:{probability}%; background:{risk_color};">
@@ -228,7 +262,8 @@ with right_col:
                 for f in st.session_state.top_factors
             )
             st.markdown(
-                f'<div class="ci-badges">{badges}</div>', unsafe_allow_html=True
+                f'<div class="ci-badges">{badges}</div>',
+                unsafe_allow_html=True,
             )
 
         st.html('<hr class="ci-divider-light">')
@@ -331,5 +366,7 @@ if st.session_state.is_loading:
 
 # ─── Footer ───────────────────────────────────────────────────────────────────
 st.html(
-    '<div class="ci-footer">Churn Intelligence · Powered by Machine Learning · v2.1</div>'
+    '<div class="ci-footer">'
+    "Churn Intelligence · Powered by Machine Learning · v2.1"
+    "</div>"
 )
