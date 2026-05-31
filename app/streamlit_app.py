@@ -48,21 +48,17 @@ ICONS = {
     ),
     "shield": '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
     "clock": (
-        '<circle cx="12" cy="12" r="10"/>'
-        '<polyline points="12 6 12 12 16 14"/>'
+        '<circle cx="12" cy="12" r="10"/>' '<polyline points="12 6 12 12 16 14"/>'
     ),
     "dollar": (
-        '<line x1="12" y1="1" x2="12" y2="23"/>'
-        '<line x1="17" y1="5" x2="7" y2="19"/>'
+        '<line x1="12" y1="1" x2="12" y2="23"/>' '<line x1="17" y1="5" x2="7" y2="19"/>'
     ),
     "file": (
         '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
         '<polyline points="14 2 14 8 20 8"/>'
     ),
     "alert-triangle": (
-        '<path d="M12 9v4"/>'
-        '<path d="M12 17h.01"/>'
-        '<path d="M12 3L3 21h18L12 3z"/>'
+        '<path d="M12 9v4"/>' '<path d="M12 17h.01"/>' '<path d="M12 3L3 21h18L12 3z"/>'
     ),
     "bar-chart": (
         '<line x1="18" y1="20" x2="18" y2="10"/>'
@@ -129,9 +125,7 @@ with left_col:
 
     # ── Tab 2 · Services ─────────────────────────────────────────────────────
     with tab2:
-        st.html(
-            f'<div class="ci-section">{ic("wifi", 13)} Connectivity</div>'
-        )
+        st.html(f'<div class="ci-section">{ic("wifi", 13)} Connectivity</div>')
         c1, c2 = st.columns(2)
         with c1:
             phone_service = st.selectbox("Phone service", ["Yes", "No"])
@@ -147,17 +141,14 @@ with left_col:
 
         if internet_service != "No":
             st.html(
-                f'<div class="ci-section">'
-                f'{ic("shield", 13)} Online add-ons</div>'
+                f'<div class="ci-section">' f'{ic("shield", 13)} Online add-ons</div>'
             )
             c1, c2, c3 = st.columns(3)
             with c1:
                 online_security = st.selectbox("Online security", ["Yes", "No"])
                 online_backup = st.selectbox("Online backup", ["Yes", "No"])
             with c2:
-                device_protection = st.selectbox(
-                    "Device protection", ["Yes", "No"]
-                )
+                device_protection = st.selectbox("Device protection", ["Yes", "No"])
                 tech_support = st.selectbox("Tech support", ["Yes", "No"])
             with c3:
                 streaming_tv = st.selectbox("Streaming TV", ["Yes", "No"])
