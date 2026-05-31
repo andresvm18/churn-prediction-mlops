@@ -1,0 +1,12 @@
+-r requirements-prod.txt
+
+pytest
+
+jupyter
+notebook
+
+matplotlib
+seaborn
+
+black
+flake8

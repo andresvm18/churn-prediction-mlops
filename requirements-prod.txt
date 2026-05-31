@@ -1,15 +1,16 @@
 fastapi
 uvicorn
+
 pandas
 numpy
 scikit-learn
 xgboost
 joblib
-shap
+
+shap==0.51.0
 
 streamlit
 requests
 
 pydantic
 python-multipart
-pytest
