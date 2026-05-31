@@ -1,169 +1,178 @@
 # Customer Churn Prediction
 
-A Machine Learning project focused on predicting customer churn using classification models and data preprocessing techniques. This project is being built step by step following real-world ML and MLOps practices.
+A complete end-to-end Machine Learning project for predicting customer churn using the IBM Telco Customer Churn dataset.
 
----
+This project demonstrates the full lifecycle of a Machine Learning solution, including:
+- Data preprocessing
+- Exploratory Data Analysis (EDA)
+- Feature engineering
+- Model training
+- Model explainability with SHAP
+- FastAPI deployment
+- Streamlit dashboard
+- Docker containerization
+- MLOps-oriented project structure 
 
-# Project Goal
 
-The objective of this project is to predict whether a customer is likely to leave a service based on customer behavior, subscription information, and account-related features.
+## Project Overview
 
-The project uses the IBM Telco Customer Churn dataset and focuses on building a complete ML pipeline from data preprocessing to model deployment.
+Customer churn prediction helps businesses identify customers who are likely to leave a service.
 
----
+Using customer demographics, subscription information, account history, and service usage data, the model estimates the probability that a customer will churn and provides business recommendations for retention actions.
 
-# Current Features
+## Features
 
-## Machine Learning Pipeline
-
-- Dataset loading with Pandas
+### Machine Learning Pipeline
 - Data cleaning and preprocessing
 - Missing value handling
+- Feature encoding
 - Feature selection
-- Label encoding
 - Train/Test split
-- SMOTE balancing
+- SMOTE class balancing
 - XGBoost classification
 - Model evaluation
-- Model serialization with Joblib
+- Model persistence with Joblib
 
----
+### Explainable AI (XAI)
 
-# API Features
+The project includes SHAP (SHapley Additive Explanations) for model interpretability.
 
-The project includes a FastAPI service that exposes a prediction endpoint for customer churn analysis.
+#### Features:
+- Global feature importance
+- Local prediction explanations
+- Top churn risk factors per customer
+- Business-friendly insights
 
-Current API capabilities:
+### FastAPI Backend
 
-- Real-time churn prediction
-- Churn probability scoring
-- Risk level classification
-- Business recommendations
+REST API providing:
+
+- Real-time predictions
+- Churn probability estimation
+- Risk classification
+- Personalized recommendations
+- SHAP explanation factorsa
 - Interactive Swagger documentation
 
----
+### Streamlit Dashboard
 
-# Technologies Used
+Modern customer-facing interface featuring:
 
-| Technology | Purpose |
-|---|---|
-| Python | Main programming language |
-| Pandas | Data manipulation |
-| Scikit-learn | Machine Learning utilities |
-| XGBoost | Classification model |
-| FastAPI | API development |
-| Uvicorn | ASGI server |
-| Joblib | Model serialization |
-| Matplotlib | Data visualization |
-| Seaborn | Statistical visualization |
+- Customer profile forms
+- Risk visualization
+- Churn probability indicators
+- Risk factor badges
+- Recommendation panel
+- Responsive UI
+- Professional styling
 
----
+### Dockerized Deployment
 
-# Project Structure
+The application is fully containerized using Docker Compose.
 
-```text
-customer-churn-prediction/
-│
-├── api/
-│   └── main.py
-│
-├── data/
+Services:
+
+- FastAPI Backend
+- Streamlit Frontend
+
+## Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| Language | Python |
+| ML Framework | Scikit-Learn |
+| Model | XGBoost |
+| Explainability | SHAP |
+| Data Processing | Pandas |
+| Numerical Computing | NumPy |
+| API | FastAPI |
+| Dashboard | Streamlit |
+| Containerization | Docker |
+| Orchestration | Docker Compose |
+| Serialization | Joblib |
+
+## Project Structure
+
+~~~
+customer-churn-prediction/ 
+│ 
+├── api/ 
+│   ├── main.py 
+│   ├── model_service.py
+│   └── schemas.py
+│ 
+├── app/
+│   ├── assets/ 
+│   ├── streamlit_app.py 
+│   └── styles.css 
+│ 
+├── data/ 
 │   ├── raw/
-│   └── processed/
+│   │   └── telco_churn.xlsx
+│   └── processed/ 
+│ 
+├── notebooks/ 
+│   ├── 01_eda_analysis.ipynb
+│   └── 02_model_explainability.ipynb 
 │
-├── notebooks/
-│   └── 01_eda_analysis.ipynb
+├── scripts/ 
+│   └── train_model.py 
+│ 
+├── src/ 
+│   ├── data/
+│   ├── models/ 
+│   └── tests/
 │
-├── scripts/
-│   └── train_model.py
-│
-├── src/
-│   └── models/
-│
-├── requirements.txt
+├── .dockerignore
+├── .gitignore
+├── docker-compose.yml 
+├── Dockerfile.api 
+├── Dockerfile.streamlit 
 ├── README.md
-└── .gitignore
-```
+├── requirements-prod.txt 
+└── requirements.txt 
+~~~
 
----
+## Dataset
 
-# Dataset
+**Dataset used:** IBM Telco Customer Churn Dataset
 
-This project uses the IBM Telco Customer Churn dataset.
+**Target variable:** Churn Value
 
-Target column:
+Values:
 
-```text
-Churn Value
-```
+- 1 = Customer churns
+- 0 = Customer remains
 
-- `1` = Customer leaves the company
-- `0` = Customer stays
+## Model Performance
 
----
-
-# Model Performance
-
-Current XGBoost + SMOTE results:
+Current production model: **XGBoost + SMOTE**
 
 | Metric | Score |
-|---|---|
+|----------|------------|
 | Accuracy | 0.73 |
 | Churn Recall | 0.73 |
-| Churn F1-Score | 0.59 |
+| Churn F1 Score | 0.59 |
 
-The dataset is imbalanced, making churn prediction more realistic and challenging.
+The dataset is naturally imbalanced, making recall an important metric for identifying customers at risk.
 
----
+## API Endpoints
+**Health Check**
+~~~
+GET /
 
-# Key Concepts Explored
+Response:
+{
+  "status": "running"
+}
+~~~
 
-During development, several important Machine Learning concepts were explored:
+**Predict Churn**
+~~~
+POST /predict
 
-- Data leakage
-- Feature selection
-- Class imbalance
-- SMOTE oversampling
-- Precision vs Recall
-- F1-score analysis
-- Correlation heatmaps
-- Feature importance
-- Model comparison
-- API deployment
+Example Request:
 
----
-
-# API Usage
-
-## Run the API
-
-```bash
-uvicorn api.main:app --reload
-```
-
-The API will be available at:
-
-```text
-http://127.0.0.1:8000
-```
-
-Interactive documentation:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
----
-
-# Prediction Endpoint
-
-## POST `/predict`
-
-This endpoint receives customer information and returns a churn prediction.
-
-### Example Request
-
-```json
 {
   "gender": "Female",
   "senior_citizen": 0,
@@ -185,99 +194,108 @@ This endpoint receives customer information and returns a churn prediction.
   "monthly_charges": 95.5,
   "total_charges": 1100.0
 }
-```
 
-### Example Response
+Example Response:
 
-```json
 {
   "prediction": 1,
   "prediction_label": "Churn",
-  "churn_probability": 0.9137,
+  "churn_probability": 0.91,
   "risk_level": "High",
-  "recommendation": "Customer is at high risk of churn. Consider retention actions."
+  "recommendation": "Customer is at high risk of churn. Consider retention actions.",
+  "top_factors": [
+    "Month-to-month contract",
+    "Fiber optic service",
+    "High monthly charges"
+  ]
 }
-```
+~~~
 
----
+## Running Locally
 
-# Response Fields
+**Clone Repository**
+~~~
+git clone https://github.com/yourusername/customer-churn-prediction.git 
+cd customer-churn-prediction
+~~~
 
-| Field | Description |
-|---|---|
-| `prediction` | Numeric prediction (`1` = churn, `0` = no churn) |
-| `prediction_label` | Human-readable prediction |
-| `churn_probability` | Probability of churn |
-| `risk_level` | Low, Medium, or High risk |
-| `recommendation` | Suggested business action |
-
----
-
-# Exploratory Data Analysis
-
-EDA work includes:
-
-- Churn distribution analysis
-- Contract type analysis
-- Monthly charges analysis
-- Correlation heatmaps
-- Feature importance analysis
-
-Notebook location:
-
-```text
-notebooks/01_eda_analysis.ipynb
-```
-
----
-
-# Setup
-
-## Create virtual environment
-
-```bash
+**Create Virtual Environment**
+~~~
 python -m venv venv
-```
 
 Windows:
+  venv\Scripts\activate
 
-```bash
-venv\Scripts\activate
-```
+Linux / Mac:
+  source venv/bin/activate
+~~~
 
----
+**Install Dependencies**
+~~~
+Development environment:
+  pip install -r requirements.txt
 
-## Install dependencies
+Production environment:
+  pip install -r requirements-prod.txt
+~~~
 
-```bash
-pip install -r requirements.txt
-```
+**Run FastAPI**
+~~~
+uvicorn api.main:app --reload
 
----
+API available at: http://127.0.0.1:8000
 
-# Run Model Training
+Swagger UI: http://127.0.0.1:8000/docs
+~~~
 
-```bash
-python scripts/train_model.py
-```
+**Run Streamlit**
+~~~
+streamlit run app/streamlit_app.py
 
----
+Dashboard: http://localhost:8501
+~~~
 
-# Future Improvements
+**Docker Deployment**
+~~~
+Build and run both services: docker compose up --build
 
-Upcoming project goals:
+Run in background: docker compose up -d --build
 
-- Docker containerization
-- Streamlit dashboard
+Stop services: docker compose down
+~~~
+
+## Docker Architecture
+~~~
+┌─────────────────────┐
+│     Streamlit       │
+│     Dashboard       │
+│     Port 8501       │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│      FastAPI        │
+│   Prediction API    │
+│     Port 8000       │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│  XGBoost + SHAP     │
+│    Model Layer      │
+└─────────────────────┘
+~~~
+
+## Future Improvements
+
+Planned enhancements:
+
 - MLflow experiment tracking
 - CI/CD pipelines
+- Unit testing
 - Cloud deployment
 - Monitoring and logging
-- Authentication and rate limiting
+- Authentication
 - Model versioning
-
----
-
-# Author
-
-Andrés Víquez
+- Automated retraining
+- Feature store integration

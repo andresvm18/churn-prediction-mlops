@@ -5,13 +5,13 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Copy requirements file first (for better caching)
-COPY requirements.txt .
+COPY requirements-prod.txt .
 
 # Upgrade pip to latest version
 RUN pip install --upgrade pip
 
 # Install Python dependencies
-RUN pip install -r requirements.txt
+RUN pip install -r requirements-prod.txt
 
 # Copy all application code into container
 COPY . .
