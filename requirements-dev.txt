@@ -10,3 +10,5 @@ seaborn
 
 black
 flake8
+
+pytest-cov

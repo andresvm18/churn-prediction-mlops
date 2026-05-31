@@ -1,5 +1,10 @@
 # Customer Churn Prediction
 
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-API-green)
+![XGBoost](https://img.shields.io/badge/XGBoost-ML-orange)
+![Tests](https://github.com/andresvm18/churn-prediction-mlops/actions/workflows/tests.yml/badge.svg)
+
 A complete end-to-end Machine Learning project for predicting customer churn using the IBM Telco Customer Churn dataset.
 
 This project demonstrates the full lifecycle of a Machine Learning solution, including:
@@ -11,7 +16,9 @@ This project demonstrates the full lifecycle of a Machine Learning solution, inc
 - FastAPI deployment
 - Streamlit dashboard
 - Docker containerization
-- MLOps-oriented project structure 
+- Automated testing with Pytest
+- Continuous Integration with GitHub Actions
+- Modular project architecture
 
 
 ## Project Overview
@@ -51,7 +58,7 @@ REST API providing:
 - Churn probability estimation
 - Risk classification
 - Personalized recommendations
-- SHAP explanation factorsa
+- SHAP-based feature explanations
 - Interactive Swagger documentation
 
 ### Streamlit Dashboard
@@ -129,8 +136,7 @@ customer-churn-prediction/
 │
 ├── tests/
 │   ├── test_api.py
-│   ├── test_model.py
-│   └── test_preprocessing.py
+│   └── test_model.py
 │
 ├── .dockerignore
 ├── .gitignore
@@ -160,10 +166,12 @@ Values:
 Current production model: **XGBoost + SMOTE**
 
 | Metric | Score |
-|----------|------------|
-| Accuracy | 0.73 |
-| Churn Recall | 0.73 |
-| Churn F1 Score | 0.59 |
+|----------|--------|
+| Accuracy | 73% |
+| Recall | 73% |
+| F1 Score | 59% |
+
+Business objective: Maximize customer churn detection while maintaining acceptable precision.
 
 The dataset is naturally imbalanced, making recall an important metric for identifying customers at risk.
 
@@ -174,7 +182,7 @@ GET /
 
 Response:
 {
-  "status": "running"
+  "message": "Customer Churn Prediction API is running"
 }
 ~~~
 
@@ -215,9 +223,9 @@ Example Response:
   "risk_level": "High",
   "recommendation": "Customer is at high risk of churn. Consider retention actions.",
   "top_factors": [
-    "Month-to-month contract",
-    "Fiber optic service",
-    "High monthly charges"
+    "Contract",
+    "Monthly Charges",
+    "Internet Service"
   ]
 }
 ~~~
@@ -226,7 +234,7 @@ Example Response:
 
 **Clone Repository**
 ~~~
-git clone https://github.com/yourusername/customer-churn-prediction.git 
+git clone https://github.com/andresvm18/customer-churn-prediction.git 
 cd customer-churn-prediction
 ~~~
 
@@ -244,7 +252,7 @@ Linux / Mac:
 **Install Dependencies**
 ~~~
 Development environment:
-  pip install -r requirements.txt
+  pip install -r requirements-dev.txt
 
 Production environment:
   pip install -r requirements-prod.txt
@@ -297,16 +305,72 @@ Stop services: docker compose down
 └─────────────────────┘
 ~~~
 
+## MLOps Architecture
+~~~
+Dataset
+   │
+   ▼
+  EDA
+   │
+   ▼
+Preprocessing
+   │
+   ▼
+ SMOTE
+   │
+   ▼
+XGBoost
+   │
+   ▼
+Joblib Model
+   │
+   ├── FastAPI
+   │
+   └── Streamlit
+~~~
+
+## CI/CD Pipeline
+
+The project uses GitHub Actions to:
+
+- Install project dependencies
+- Run automated tests
+- Validate application integrity on every push and pull request
+
+Workflow: **Developer → Push → GitHub Actions → Tests → Pass/Fail**
+
+## Testing & CI/CD
+
+The project includes automated testing and continuous integration.
+
+### Automated Tests
+
+- API endpoint tests
+- Business logic tests
+- Response validation tests
+
+### Continuous Integration
+
+GitHub Actions automatically:
+
+- Installs dependencies
+- Runs all unit tests
+- Validates code before merge
+
+Run tests locally:
+
+~~~
+pytest
+~~~
+
 ## Future Improvements
 
 Planned enhancements:
 
 - MLflow experiment tracking
-- CI/CD pipelines
-- Unit testing
-- Cloud deployment
+- Cloud deployment (Render / Railway)
 - Monitoring and logging
-- Authentication
+- Authentication and authorization
 - Model versioning
-- Automated retraining
-- Feature store integration
+- Automated retraining pipeline
+- Data drift detection

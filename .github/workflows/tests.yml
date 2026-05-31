@@ -41,4 +41,12 @@ jobs:
       # Run all test files
       - name: Run tests
         run: |
-          pytest
+          pytest --cov=api --cov-report=term
+
+      # Run flake8 linter to check code style and errors
+      - name: Run flake8
+        run: flake8 .
+
+        # Check if code is formatted with Black (without modifying files)
+      - name: Check formatting
+        run: black --check .
