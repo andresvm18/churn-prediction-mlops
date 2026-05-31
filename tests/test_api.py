@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from api.main import app
 
@@ -13,7 +14,27 @@ def test_root_endpoint():
     assert response.status_code == 200
 
 
-def test_predict_endpoint():
+# Mock the prediction function to avoid calling real model
+@patch("api.main.predict_customer_churn")
+def test_predict_endpoint(mock_predict):
+
+    # Set fake return value for the mocked function
+    mock_predict.return_value = {
+        "prediction": 1,
+        "prediction_label": "Churn",
+        "churn_probability": 0.9137,
+        "risk_level": "High",
+        "recommendation": (
+            "Customer is at high risk of churn. "
+            "Consider retention actions."
+        ),
+        "top_factors": [
+            "Contract",
+            "Monthly Charges",
+            "Internet Service"
+        ]
+    }
+
     # Sample customer data for testing
     payload = {
         "gender": "Female",
@@ -38,7 +59,10 @@ def test_predict_endpoint():
     }
 
     # Send POST request to prediction endpoint
-    response = client.post("/predict", json=payload)
+    response = client.post(
+        "/predict",
+        json=payload
+    )
 
     # Verify request succeeded
     assert response.status_code == 200
