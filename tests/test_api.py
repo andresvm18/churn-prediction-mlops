@@ -25,14 +25,9 @@ def test_predict_endpoint(mock_predict):
         "churn_probability": 0.9137,
         "risk_level": "High",
         "recommendation": (
-            "Customer is at high risk of churn. "
-            "Consider retention actions."
+            "Customer is at high risk of churn. " "Consider retention actions."
         ),
-        "top_factors": [
-            "Contract",
-            "Monthly Charges",
-            "Internet Service"
-        ]
+        "top_factors": ["Contract", "Monthly Charges", "Internet Service"],
     }
 
     # Sample customer data for testing
@@ -55,14 +50,11 @@ def test_predict_endpoint(mock_predict):
         "paperless_billing": "Yes",
         "payment_method": "Electronic check",
         "monthly_charges": 95.5,
-        "total_charges": 1100.0
+        "total_charges": 1100.0,
     }
 
     # Send POST request to prediction endpoint
-    response = client.post(
-        "/predict",
-        json=payload
-    )
+    response = client.post("/predict", json=payload)
 
     # Verify request succeeded
     assert response.status_code == 200

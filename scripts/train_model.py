@@ -18,7 +18,9 @@ customer_churn_data.columns = customer_churn_data.columns.str.strip()
 
 # Replace empty values
 for column_name in customer_churn_data.columns:
-    customer_churn_data[column_name] = customer_churn_data[column_name].replace(" ", pd.NA)
+    customer_churn_data[column_name] = customer_churn_data[column_name].replace(
+        " ", pd.NA
+    )
 
 # Fill missing values
 customer_churn_data = customer_churn_data.fillna("Unknown")
@@ -29,16 +31,13 @@ target_column = "Churn Value"
 # Remove leakage, identifier, geographic, and constant columns
 columns_to_remove = [
     target_column,
-
     # Leakage columns
     "Churn Label",
     "Churn Score",
     "Churn Reason",
     "CLTV",
-
     # Identifier columns
     "CustomerID",
-
     # Geographic columns
     "Country",
     "State",
@@ -47,9 +46,8 @@ columns_to_remove = [
     "Lat Long",
     "Latitude",
     "Longitude",
-
     # Constant columns
-    "Count"
+    "Count",
 ]
 
 # Separate features and target
@@ -72,7 +70,7 @@ categorical_columns = [
     "Streaming Movies",
     "Contract",
     "Paperless Billing",
-    "Payment Method"
+    "Payment Method",
 ]
 
 # Encode categorical features
@@ -93,19 +91,14 @@ feature_data = feature_data.fillna(0)
 
 # Split dataset
 features_train, features_test, target_train, target_test = train_test_split(
-    feature_data,
-    target_data,
-    test_size=0.2,
-    random_state=42,
-    stratify=target_data
+    feature_data, target_data, test_size=0.2, random_state=42, stratify=target_data
 )
 
 # Balance training data using SMOTE
 smote_balancer = SMOTE(random_state=42)
 
 features_train_balanced, target_train_balanced = smote_balancer.fit_resample(
-    features_train,
-    target_train
+    features_train, target_train
 )
 
 print("\nTraining class distribution before SMOTE:")
@@ -122,7 +115,7 @@ churn_classifier = XGBClassifier(
     subsample=0.8,
     colsample_bytree=0.8,
     random_state=42,
-    eval_metric="logloss"
+    eval_metric="logloss",
 )
 
 churn_classifier.fit(features_train_balanced, target_train_balanced)
