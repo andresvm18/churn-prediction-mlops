@@ -5,6 +5,5 @@ __pycache__/
 .ipynb_checkpoints/
 
 data/processed/
-src/models/*.pkl
 
 .DS_Store
