@@ -84,3 +84,4 @@ def test_predict_customer_churn_without_model():
             model_service.predict_customer_churn(None)
         except RuntimeError as exc:
             assert "Model files not found" in str(exc)
+            
