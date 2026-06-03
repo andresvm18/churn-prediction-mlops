@@ -1,13 +1,21 @@
 from fastapi import FastAPI
 
-from api.schemas import CustomerData  # Import request data schema
-from api.model_service import predict_customer_churn  # Import prediction logic
+from api.schemas import CustomerData
+from api.model_service import predict_customer_churn
 
-# Initialize FastAPI application
+# Initialize FastAPI app with title
 app = FastAPI(title="Customer Churn Prediction API")
 
 
-# Health check endpoint - verifies API is running
+# Health check / welcome endpoint
+@app.get("/")
+def root():
+    return {
+        "message": "Customer Churn Prediction API is running"
+    }
+
+
+# Simple health check for monitoring
 @app.get("/health")
 def health():
     return {
@@ -15,7 +23,8 @@ def health():
     }
 
 
-# Prediction endpoint - accepts customer data and returns churn prediction
+# Main prediction endpoint
 @app.post("/predict")
 def predict_churn(customer_data: CustomerData):
-    return predict_customer_churn(customer_data)  # Delegate to service function
+    # Delegate to service function
+    return predict_customer_churn(customer_data)

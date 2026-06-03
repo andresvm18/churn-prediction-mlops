@@ -192,7 +192,7 @@ The dataset is naturally imbalanced, making recall an important metric for ident
 ## API Endpoints
 **Health Check**
 ~~~
-GET /
+GET /health
 
 Response:
 {
