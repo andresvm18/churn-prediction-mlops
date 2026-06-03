@@ -8,9 +8,11 @@ app = FastAPI(title="Customer Churn Prediction API")
 
 
 # Health check endpoint - verifies API is running
-@app.get("/")
-def root():
-    return {"message": "Customer Churn Prediction API is running"}
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy"
+    }
 
 
 # Prediction endpoint - accepts customer data and returns churn prediction

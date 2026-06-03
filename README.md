@@ -5,6 +5,17 @@
 ![XGBoost](https://img.shields.io/badge/XGBoost-ML-orange)
 ![Tests](https://github.com/andresvm18/churn-prediction-mlops/actions/workflows/tests.yml/badge.svg)
 
+## Live Demo
+
+### Dashboard: https://churn-dashboard-z386.onrender.com/
+![Dashboard Home](images/dashboard-home.png)
+
+![Prediction](images/dashboard-prediction.png)
+
+### API Docs: https://churn-api-mlbh.onrender.com/docs
+![Swagger](images/swagger-api.png)
+
+
 A complete end-to-end Machine Learning project for predicting customer churn using the IBM Telco Customer Churn dataset.
 
 This project demonstrates the full lifecycle of a Machine Learning solution, including:
@@ -20,12 +31,6 @@ This project demonstrates the full lifecycle of a Machine Learning solution, inc
 - Continuous Integration with GitHub Actions
 - Modular project architecture
 
-## Live Demo
-
-### Dashboard: https://tu-dashboard.onrender.com
-![Dashboard](images/Dashboard.png)
-
-### API Docs: https://churn-api-mlbh.onrender.com
 
 ## Project Overview
 
@@ -191,7 +196,7 @@ GET /
 
 Response:
 {
-  "message": "Customer Churn Prediction API is running"
+  "status": "healthy"
 }
 ~~~
 
