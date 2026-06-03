@@ -20,6 +20,12 @@ This project demonstrates the full lifecycle of a Machine Learning solution, inc
 - Continuous Integration with GitHub Actions
 - Modular project architecture
 
+## Live Demo
+
+### Dashboard: https://tu-dashboard.onrender.com
+![Dashboard](images/Dashboard.png)
+
+### API Docs: https://churn-api-mlbh.onrender.com
 
 ## Project Overview
 
@@ -123,6 +129,9 @@ customer-churn-prediction/
 │   │   └── telco_churn.xlsx
 │   └── processed/ 
 │ 
+├── IMAGES/ 
+│   └── Dashboard.png
+│
 ├── notebooks/ 
 │   ├── 01_eda_analysis.ipynb
 │   └── 02_model_explainability.ipynb 
@@ -374,3 +383,11 @@ Planned enhancements:
 - Model versioning
 - Automated retraining pipeline
 - Data drift detection
+
+## Author
+
+Andrés Víquez
+
+LinkedIn: https://www.linkedin.com/in/andr%C3%A9s-v%C3%ADquez-marchena-b39490310/
+
+GitHub: https://github.com/andresvm18

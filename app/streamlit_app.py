@@ -5,7 +5,6 @@ import requests
 import streamlit as st
 
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
-st.write("API URL:", API_URL)
 
 # ─── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
