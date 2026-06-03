@@ -66,11 +66,183 @@ ICONS = {
         '<line x1="6" y1="20" x2="6" y2="14"/>'
     ),
     "activity": '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+    "info": (
+        '<circle cx="12" cy="12" r="10"/>'
+        '<line x1="12" y1="16" x2="12" y2="12"/>'
+        '<line x1="12" y1="8" x2="12.01" y2="8"/>'
+    ),
 }
 
 
 def ic(name: str, size: int = 14) -> str:
     return svg(ICONS.get(name, ""), size)
+
+
+# ─── SHAP factor label mapping ─────────────────────────────────────────────────
+FACTOR_LABELS = {
+    "Contract_Month-to-month":        "Month-to-month contract",
+    "Contract_Two year":              "Two-year contract",
+    "Contract_One year":              "One-year contract",
+    "InternetService_Fiber optic":    "Fiber optic internet",
+    "InternetService_DSL":            "DSL internet",
+    "InternetService_No":             "No internet service",
+    "tenure_months":                  "Short tenure",
+    "MonthlyCharges":                 "High monthly charges",
+    "TotalCharges":                   "Total charges",
+    "PaymentMethod_Electronic check": "Electronic check payment",
+    "PaymentMethod_Mailed check":     "Mailed check payment",
+    "PaymentMethod_Bank transfer (automatic)": "Auto bank transfer",
+    "PaymentMethod_Credit card (automatic)":   "Auto credit card",
+    "OnlineSecurity_No":              "No online security",
+    "TechSupport_No":                 "No tech support",
+    "OnlineBackup_No":                "No online backup",
+    "DeviceProtection_No":            "No device protection",
+    "StreamingTV_Yes":                "Streaming TV add-on",
+    "StreamingMovies_Yes":            "Streaming movies add-on",
+    "MultipleLines_Yes":              "Multiple phone lines",
+    "PaperlessBilling_Yes":           "Paperless billing",
+    "Partner_Yes":                    "Has a partner",
+    "Partner_No":                     "No partner",
+    "Dependents_Yes":                 "Has dependents",
+    "Dependents_No":                  "No dependents",
+    "SeniorCitizen":                  "Senior citizen",
+    "gender_Male":                    "Gender: Male",
+    "gender_Female":                  "Gender: Female",
+}
+
+def friendly_factor(raw: str) -> str:
+    """Return a human-readable label for a SHAP feature name."""
+    return FACTOR_LABELS.get(raw, raw.replace("_", " ").replace("-", " ").title())
+
+
+# ─── Circular gauge SVG ────────────────────────────────────────────────────────
+def gauge_svg(probability: float, risk_color: str) -> str:
+    """
+    Returns an SVG arc gauge for the given probability (0–100).
+    Uses a 270-degree arc (135° → 405°), starts bottom-left, sweeps clockwise.
+    """
+    size = 160
+    cx, cy, r = 80, 88, 58
+    stroke_bg = "#e8e4de"
+    track_width = 10
+
+    total_angle = 270  # degrees
+    start_deg = 135
+    end_deg = start_deg + total_angle * (probability / 100)
+
+    def polar(cx, cy, r, deg):
+        import math
+        rad = math.radians(deg)
+        return cx + r * math.cos(rad), cy + r * math.sin(rad)
+
+    # Background arc
+    def arc_path(cx, cy, r, start, sweep):
+        import math
+        end = start + sweep
+        x1, y1 = polar(cx, cy, r, start)
+        x2, y2 = polar(cx, cy, r, end)
+        large = 1 if sweep > 180 else 0
+        return f"M {x1:.2f} {y1:.2f} A {r} {r} 0 {large} 1 {x2:.2f} {y2:.2f}"
+
+    bg_path = arc_path(cx, cy, r, start_deg, total_angle)
+    fill_sweep = total_angle * (probability / 100)
+    fill_path = arc_path(cx, cy, r, start_deg, max(fill_sweep, 0.1))
+
+    # Dot at end of fill arc
+    dot_x, dot_y = polar(cx, cy, r, start_deg + fill_sweep)
+
+    return f"""
+<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background track -->
+  <path d="{bg_path}" fill="none" stroke="{stroke_bg}" stroke-width="{track_width}"
+        stroke-linecap="round"/>
+  <!-- Fill arc -->
+  <path d="{fill_path}" fill="none" stroke="{risk_color}" stroke-width="{track_width}"
+        stroke-linecap="round"/>
+  <!-- End dot -->
+  <circle cx="{dot_x:.2f}" cy="{dot_y:.2f}" r="6" fill="{risk_color}"/>
+  <!-- Center text: percentage -->
+  <text x="{cx}" y="{cy - 6}" text-anchor="middle" dominant-baseline="middle"
+        font-family="DM Serif Display, serif" font-size="26" fill="{risk_color}">
+    {probability:.0f}%
+  </text>
+  <text x="{cx}" y="{cy + 16}" text-anchor="middle"
+        font-family="DM Mono, monospace" font-size="8" fill="#9c968d"
+        letter-spacing="1.5">CHURN PROB</text>
+  <!-- Min/Max labels -->
+  <text x="18" y="112" text-anchor="middle"
+        font-family="DM Mono, monospace" font-size="8" fill="#9c968d">0%</text>
+  <text x="142" y="112" text-anchor="middle"
+        font-family="DM Mono, monospace" font-size="8" fill="#9c968d">100%</text>
+</svg>
+"""
+
+
+# ─── Customer Snapshot helper ──────────────────────────────────────────────────
+def customer_snapshot(data: dict) -> str:
+    """Build a compact HTML snapshot card from the current form values."""
+    contract_short = {
+        "Month-to-month": "M2M",
+        "One year": "1yr",
+        "Two year": "2yr",
+    }.get(data["contract"], data["contract"])
+
+    internet_icon = {"Fiber optic": "⚡", "DSL": "🔌", "No": "🚫"}.get(
+        data["internet_service"], ""
+    )
+
+    tenure_label = (
+        f"{data['tenure_months']}mo"
+        if data["tenure_months"] > 0
+        else "New"
+    )
+
+    rows = [
+        ("Tenure",    tenure_label),
+        ("Contract",  contract_short),
+        ("Internet",  f"{internet_icon} {data['internet_service']}"),
+        ("Payment",   data["payment_method"].split(" ")[0]),
+        ("Monthly",   f"${data['monthly_charges']:.0f}"),
+    ]
+
+    items_html = "".join(
+        f"""<div class="ci-snap-item">
+              <span class="ci-snap-label">{label}</span>
+              <span class="ci-snap-value">{value}</span>
+            </div>"""
+        for label, value in rows
+    )
+
+    senior_badge = (
+        '<span class="ci-snap-badge">Senior</span>'
+        if data["senior_citizen"] == 1
+        else ""
+    )
+    partner_badge = (
+        '<span class="ci-snap-badge">Partner</span>'
+        if data["partner"] == "Yes"
+        else ""
+    )
+    dep_badge = (
+        '<span class="ci-snap-badge">Dependents</span>'
+        if data["dependents"] == "Yes"
+        else ""
+    )
+
+    badges = senior_badge + partner_badge + dep_badge
+    badges_row = f'<div class="ci-snap-badges">{badges}</div>' if badges else ""
+
+    return f"""
+<div class="ci-snapshot-card">
+  <div class="ci-snap-header">
+    {ic("user", 11)}&nbsp;Customer Snapshot
+  </div>
+  <div class="ci-snap-grid">
+    {items_html}
+  </div>
+  {badges_row}
+</div>
+"""
 
 
 # ─── Session state ────────────────────────────────────────────────────────────
@@ -185,9 +357,24 @@ with left_col:
                 "Monthly charges ($)", min_value=0.0, value=95.5, step=1.0
             )
         with c2:
-            total_charges = st.number_input(
-                "Total charges ($)", min_value=0.0, value=1100.0, step=10.0
-            )
+            total_charges = round(tenure_months * monthly_charges, 2)
+            st.metric("Estimated Total Charges", f"${total_charges:,.2f}")
+            st.caption("Calculated automatically from tenure and monthly charges.")
+
+    # ── Customer Snapshot (below tabs) ───────────────────────────────────────
+    snapshot_data = {
+        "gender": gender,
+        "senior_citizen": senior_citizen,
+        "partner": partner,
+        "dependents": dependents,
+        "tenure_months": tenure_months,
+        "internet_service": internet_service,
+        "contract": contract,
+        "payment_method": payment_method,
+        "monthly_charges": monthly_charges,
+    }
+    st.html(customer_snapshot(snapshot_data))
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  RIGHT COLUMN — Prediction panel
@@ -209,48 +396,51 @@ with right_col:
             "Low": ("#1e8449", "🟢"),
         }.get(risk_level, ("#1a1714", "⚪"))
 
-        # Risk level card
+        # ── Circular gauge ────────────────────────────────────────────────────
         st.markdown(
             f"""
-        <div class="ci-risk-card">
-            <div class="ci-risk-header">
-                {ic("alert-triangle", 12)}&nbsp;Risk Level
-            </div>
-            <div class="ci-risk-value" style="color:{risk_color};">
-                {risk_emoji} {risk_level}
-            </div>
-        </div>
-        """,
+<div class="ci-gauge-wrap">
+  <div class="ci-risk-level-badge" style="color:{risk_color};">
+    {risk_emoji} {risk_level} Risk
+  </div>
+  {gauge_svg(probability, risk_color)}
+</div>
+""",
             unsafe_allow_html=True,
         )
 
-        # Probability card
-        st.markdown(
-            f"""
-        <div class="ci-prob-card">
-            <div class="ci-prob-label">Churn Probability</div>
-            <div class="ci-prob-value" style="color:{risk_color};">
-                {probability:.1f}%
-            </div>
-            <div class="ci-prob-bar">
-                <div class="ci-prob-bar-fill"
-                     style="width:{probability}%; background:{risk_color};">
-                </div>
-            </div>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        # ── st.metric cards ────────────────────────────────────────────────────
+        m1, m2 = st.columns(2)
+        with m1:
+            st.metric(
+                label="Churn Probability",
+                value=f"{probability:.1f}%",
+                help="Probability that the customer will cancel their subscription in the coming months",
+            )
+        with m2:
+            # Compare to a typical baseline of ~26% churn (Telco dataset avg)
+            baseline = 26.0
+            delta_val = probability - baseline
+            st.metric(
+                label="vs. Baseline",
+                value=f"{probability:.1f}%",
+                delta=f"{delta_val:+.1f}pp",
+                delta_color="inverse",
+                help="Comparison with the average market churn rate (~26%).",
+            )
 
-        # Key risk factors
+        # ── Key risk factors (friendly labels) ────────────────────────────────
         if st.session_state.top_factors:
             st.markdown(
                 '<div class="ci-risk-head">Key Risk Factors</div>',
                 unsafe_allow_html=True,
             )
+            friendly_factors = [
+                friendly_factor(f) for f in st.session_state.top_factors
+            ]
             badges = "".join(
                 f'<span class="ci-badge">{f}</span>'
-                for f in st.session_state.top_factors
+                for f in friendly_factors
             )
             st.markdown(
                 f'<div class="ci-badges">{badges}</div>',
@@ -259,7 +449,7 @@ with right_col:
 
         st.html('<hr class="ci-divider-light">')
 
-        # Recommendation
+        # ── Recommendation ────────────────────────────────────────────────────
         st.markdown(
             f"""
         <div class="ci-recommendation">
@@ -281,7 +471,6 @@ with right_col:
                 </p>
             </div>
             """
-
         st.markdown(empty_state_html, unsafe_allow_html=True)
 
     # ── Button ────────────────────────────────────────────────────────────────

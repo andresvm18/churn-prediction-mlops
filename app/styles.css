@@ -212,79 +212,57 @@ header { display: none !important; visibility: hidden !important; }
     transform: translateY(0) !important;
 }
 
-/* ─── Risk Card ─── */
-.ci-risk-card {
+/* ─── Circular Gauge ─── */
+.ci-gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 1.25rem 1rem;
-    text-align: center;
+    padding: 1.25rem 1rem 0.75rem;
     margin-bottom: 0.75rem;
 }
 
-.ci-risk-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    font-size: 0.63rem;
-    font-family: 'DM Mono', monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-lo);
-    margin-bottom: 0.6rem;
-}
-
-.ci-risk-value {
+.ci-risk-level-badge {
     font-family: 'DM Serif Display', serif;
-    font-size: 2.4rem;
+    font-size: 1.35rem;
     font-weight: 400;
-    line-height: 1.1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-}
-
-/* ─── Probability Card ─── */
-.ci-prob-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.25rem 1rem;
-    text-align: center;
-    margin-bottom: 0.75rem;
-}
-
-.ci-prob-label {
-    font-size: 0.63rem;
-    font-family: 'DM Mono', monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-lo);
+    letter-spacing: -0.01em;
     margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
 }
 
-.ci-prob-value {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.8rem;
-    font-weight: 400;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-    margin-bottom: 0.9rem;
+/* ─── st.metric overrides ─── */
+[data-testid="stMetric"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    padding: 0.9rem 1rem !important;
+    margin-bottom: 0.75rem !important;
 }
 
-.ci-prob-bar {
-    background: var(--surface-3);
-    border-radius: 999px;
-    height: 7px;
-    overflow: hidden;
+[data-testid="stMetricLabel"] {
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.63rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    color: var(--text-lo) !important;
 }
 
-.ci-prob-bar-fill {
-    height: 100%;
-    border-radius: 999px;
-    transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+[data-testid="stMetricValue"] {
+    font-family: 'DM Serif Display', serif !important;
+    font-size: 1.6rem !important;
+    font-weight: 400 !important;
+    color: var(--text-hi) !important;
+    letter-spacing: -0.02em !important;
+}
+
+[data-testid="stMetricDelta"] {
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.75rem !important;
 }
 
 /* ─── Risk Factors ─── */
@@ -412,6 +390,79 @@ header { display: none !important; visibility: hidden !important; }
 }
 
 @keyframes ci-spin { to { transform: rotate(360deg); } }
+
+/* ─── Customer Snapshot Card ─── */
+.ci-snapshot-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-top: 1.25rem;
+}
+
+.ci-snap-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.63rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-lo);
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.ci-snap-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.4rem;
+}
+
+.ci-snap-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.65rem;
+}
+
+.ci-snap-label {
+    font-size: 0.58rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-lo);
+}
+
+.ci-snap-value {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-hi);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ci-snap-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 0.65rem;
+}
+
+.ci-snap-badge {
+    font-size: 0.65rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-radius: 999px;
+    padding: 2px 9px;
+}
 
 /* ─── Footer ─── */
 .ci-footer {
