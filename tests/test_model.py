@@ -78,9 +78,9 @@ def test_build_input_dataframe():
 
 def test_predict_customer_churn_without_model():
     # Simulate missing model files
-    with patch.object(model_service, "churn_model", None):
-        # Should raise an error when trying to predict
+    with patch("api.model_service.os.path.exists", return_value=False):
         try:
             model_service.predict_customer_churn(None)
+            assert False, "Should have raised RuntimeError"
         except RuntimeError as exc:
-            assert "Model files not found" in str(exc)
+            assert "not found" in str(exc).lower()

@@ -1,27 +1,23 @@
-# Use lightweight Python 3.11 as base image
+# Use Python 3.11 slim image as base (smaller footprint)
 FROM python:3.11-slim
 
 # Set working directory inside container
 WORKDIR /app
 
-# Copy requirements file first (for better caching)
+# Copy production dependencies first (for better caching)
 COPY requirements-prod.txt .
 
-# Upgrade pip to latest version
-RUN pip install --upgrade pip
+# Install Python dependencies and curl (for health checks)
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements-prod.txt && \
+    apt-get update && apt-get install -y --no-install-recommends curl && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-RUN pip install -r requirements-prod.txt
-
-# Copy all application code into container
+# Copy all application code
 COPY . .
 
 # Expose port 8000 for FastAPI
 EXPOSE 8000
 
-# Command to run the FastAPI application
-# uvicorn: ASGI server
-# api.main:app - app object from api/main.py
-# --host 0.0.0.0 - listen on all network interfaces
-# --port 8000 - use port 8000
+# Run FastAPI with uvicorn server
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]

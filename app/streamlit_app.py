@@ -1,12 +1,14 @@
+import math
 import os
 from pathlib import Path
 
 import requests
 import streamlit as st
 
+# Get API URL from environment variable or use default
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
 
-# ─── Page config ──────────────────────────────────────────────────────────────
+# Page configuration
 st.set_page_config(
     page_title="Churn Intelligence",
     page_icon="📉",
@@ -14,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ─── Load CSS ─────────────────────────────────────────────────────────────────
+# Load custom CSS styles
 css_path = Path(__file__).parent / "styles.css"
 if css_path.exists():
     with open(css_path, "r", encoding="utf-8") as f:
@@ -23,7 +25,7 @@ else:
     st.error("styles.css not found")
 
 
-# ─── SVG helpers ──────────────────────────────────────────────────────────────
+# Helper function to create SVG icons
 def svg(path_d: str, size: int = 14, stroke_w: float = 1.75) -> str:
     return (
         f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" '
@@ -33,6 +35,7 @@ def svg(path_d: str, size: int = 14, stroke_w: float = 1.75) -> str:
     )
 
 
+# Dictionary of icon SVG paths
 ICONS = {
     "trending-down": (
         '<polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>'
@@ -48,17 +51,21 @@ ICONS = {
     ),
     "shield": '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
     "clock": (
-        '<circle cx="12" cy="12" r="10"/>' '<polyline points="12 6 12 12 16 14"/>'
+        '<circle cx="12" cy="12" r="10"/>'
+        '<polyline points="12 6 12 12 16 14"/>'
     ),
     "dollar": (
-        '<line x1="12" y1="1" x2="12" y2="23"/>' '<line x1="17" y1="5" x2="7" y2="19"/>'
+        '<line x1="12" y1="1" x2="12" y2="23"/>'
+        '<line x1="17" y1="5" x2="7" y2="19"/>'
     ),
     "file": (
         '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
         '<polyline points="14 2 14 8 20 8"/>'
     ),
     "alert-triangle": (
-        '<path d="M12 9v4"/>' '<path d="M12 17h.01"/>' '<path d="M12 3L3 21h18L12 3z"/>'
+        '<path d="M12 9v4"/>'
+        '<path d="M12 17h.01"/>'
+        '<path d="M12 3L3 21h18L12 3z"/>'
     ),
     "bar-chart": (
         '<line x1="18" y1="20" x2="18" y2="10"/>'
@@ -78,90 +85,77 @@ def ic(name: str, size: int = 14) -> str:
     return svg(ICONS.get(name, ""), size)
 
 
-# ─── SHAP factor label mapping ─────────────────────────────────────────────────
-FACTOR_LABELS = {
-    "Contract_Month-to-month":        "Month-to-month contract",
-    "Contract_Two year":              "Two-year contract",
-    "Contract_One year":              "One-year contract",
-    "InternetService_Fiber optic":    "Fiber optic internet",
-    "InternetService_DSL":            "DSL internet",
-    "InternetService_No":             "No internet service",
-    "tenure_months":                  "Short tenure",
-    "MonthlyCharges":                 "High monthly charges",
-    "TotalCharges":                   "Total charges",
-    "PaymentMethod_Electronic check": "Electronic check payment",
-    "PaymentMethod_Mailed check":     "Mailed check payment",
-    "PaymentMethod_Bank transfer (automatic)": "Auto bank transfer",
-    "PaymentMethod_Credit card (automatic)":   "Auto credit card",
-    "OnlineSecurity_No":              "No online security",
-    "TechSupport_No":                 "No tech support",
-    "OnlineBackup_No":                "No online backup",
-    "DeviceProtection_No":            "No device protection",
-    "StreamingTV_Yes":                "Streaming TV add-on",
-    "StreamingMovies_Yes":            "Streaming movies add-on",
-    "MultipleLines_Yes":              "Multiple phone lines",
-    "PaperlessBilling_Yes":           "Paperless billing",
-    "Partner_Yes":                    "Has a partner",
-    "Partner_No":                     "No partner",
-    "Dependents_Yes":                 "Has dependents",
-    "Dependents_No":                  "No dependents",
-    "SeniorCitizen":                  "Senior citizen",
-    "gender_Male":                    "Gender: Male",
-    "gender_Female":                  "Gender: Female",
+# Map column names to user-friendly display labels
+COLUMN_LABELS = {
+    "Contract":          "Contract type",
+    "Monthly Charges":   "Monthly charges",
+    "Total Charges":     "Total charges",
+    "Tenure Months":     "Tenure (months)",
+    "Internet Service":  "Internet service",
+    "Payment Method":    "Payment method",
+    "Online Security":   "Online security",
+    "Tech Support":      "Tech support",
+    "Online Backup":     "Online backup",
+    "Device Protection": "Device protection",
+    "Streaming TV":      "Streaming TV",
+    "Streaming Movies":  "Streaming movies",
+    "Multiple Lines":    "Multiple lines",
+    "Paperless Billing": "Paperless billing",
+    "Partner":           "Has partner",
+    "Dependents":        "Has dependents",
+    "Senior Citizen":    "Senior citizen",
+    "Gender":            "Gender",
+    "Phone Service":     "Phone service",
 }
 
+
 def friendly_factor(raw: str) -> str:
-    """Return a human-readable label for a SHAP feature name."""
-    return FACTOR_LABELS.get(raw, raw.replace("_", " ").replace("-", " ").title())
+    if ": " in raw:
+        col, value = raw.split(": ", 1)
+        friendly_col = COLUMN_LABELS.get(col, col)
+        return f"{friendly_col}: {value}"
+    return raw.replace("_", " ").title()
 
 
-# ─── Circular gauge SVG ────────────────────────────────────────────────────────
+# Create a circular gauge SVG for probability display
 def gauge_svg(probability: float, risk_color: str) -> str:
-    """
-    Returns an SVG arc gauge for the given probability (0–100).
-    Uses a 270-degree arc (135° → 405°), starts bottom-left, sweeps clockwise.
-    """
     size = 160
     cx, cy, r = 80, 88, 58
     stroke_bg = "#e8e4de"
     track_width = 10
-
-    total_angle = 270  # degrees
+    total_angle = 270
     start_deg = 135
-    end_deg = start_deg + total_angle * (probability / 100)
 
     def polar(cx, cy, r, deg):
-        import math
         rad = math.radians(deg)
         return cx + r * math.cos(rad), cy + r * math.sin(rad)
 
-    # Background arc
     def arc_path(cx, cy, r, start, sweep):
-        import math
         end = start + sweep
         x1, y1 = polar(cx, cy, r, start)
         x2, y2 = polar(cx, cy, r, end)
         large = 1 if sweep > 180 else 0
         return f"M {x1:.2f} {y1:.2f} A {r} {r} 0 {large} 1 {x2:.2f} {y2:.2f}"
 
+    # Create background and fill arcs
     bg_path = arc_path(cx, cy, r, start_deg, total_angle)
     fill_sweep = total_angle * (probability / 100)
     fill_path = arc_path(cx, cy, r, start_deg, max(fill_sweep, 0.1))
-
-    # Dot at end of fill arc
+    
+    # Calculate dot position at the end of the fill arc
     dot_x, dot_y = polar(cx, cy, r, start_deg + fill_sweep)
 
     return f"""
 <svg width="{size}" height="{size}" viewBox="0 0 {size} {size}" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background track -->
+  <!-- Background arc -->
   <path d="{bg_path}" fill="none" stroke="{stroke_bg}" stroke-width="{track_width}"
         stroke-linecap="round"/>
-  <!-- Fill arc -->
+  <!-- Filled arc showing probability -->
   <path d="{fill_path}" fill="none" stroke="{risk_color}" stroke-width="{track_width}"
         stroke-linecap="round"/>
-  <!-- End dot -->
+  <!-- Dot marker -->
   <circle cx="{dot_x:.2f}" cy="{dot_y:.2f}" r="6" fill="{risk_color}"/>
-  <!-- Center text: percentage -->
+  <!-- Percentage text -->
   <text x="{cx}" y="{cy - 6}" text-anchor="middle" dominant-baseline="middle"
         font-family="DM Serif Display, serif" font-size="26" fill="{risk_color}">
     {probability:.0f}%
@@ -178,33 +172,35 @@ def gauge_svg(probability: float, risk_color: str) -> str:
 """
 
 
-# ─── Customer Snapshot helper ──────────────────────────────────────────────────
+# Build a compact customer snapshot card
 def customer_snapshot(data: dict) -> str:
-    """Build a compact HTML snapshot card from the current form values."""
+    # Shorten contract type for display
     contract_short = {
         "Month-to-month": "M2M",
         "One year": "1yr",
         "Two year": "2yr",
     }.get(data["contract"], data["contract"])
 
+    # Map internet service to simple icon
     internet_icon = {"Fiber optic": "⚡", "DSL": "🔌", "No": "🚫"}.get(
         data["internet_service"], ""
     )
 
+    # Format tenure display
     tenure_label = (
-        f"{data['tenure_months']}mo"
-        if data["tenure_months"] > 0
-        else "New"
+        f"{data['tenure_months']}mo" if data["tenure_months"] > 0 else "New"
     )
 
+    # Key metrics to display
     rows = [
-        ("Tenure",    tenure_label),
-        ("Contract",  contract_short),
-        ("Internet",  f"{internet_icon} {data['internet_service']}"),
-        ("Payment",   data["payment_method"].split(" ")[0]),
-        ("Monthly",   f"${data['monthly_charges']:.0f}"),
+        ("Tenure",   tenure_label),
+        ("Contract", contract_short),
+        ("Internet", f"{internet_icon} {data['internet_service']}"),
+        ("Payment",  data["payment_method"].split(" ")[0]),
+        ("Monthly",  f"${data['monthly_charges']:.0f}"),
     ]
 
+    # Generate HTML for each row
     items_html = "".join(
         f"""<div class="ci-snap-item">
               <span class="ci-snap-label">{label}</span>
@@ -213,6 +209,7 @@ def customer_snapshot(data: dict) -> str:
         for label, value in rows
     )
 
+    # Create badges for special customer attributes
     senior_badge = (
         '<span class="ci-snap-badge">Senior</span>'
         if data["senior_citizen"] == 1
@@ -245,7 +242,7 @@ def customer_snapshot(data: dict) -> str:
 """
 
 
-# ─── Session state ────────────────────────────────────────────────────────────
+# Initialize session state variables
 for key, default in [
     ("top_factors", []),
     ("has_prediction", False),
@@ -255,7 +252,8 @@ for key, default in [
     if key not in st.session_state:
         st.session_state[key] = default
 
-# ─── Header ───────────────────────────────────────────────────────────────────
+
+# Header section
 st.html(f"""
 <div class="ci-header-wrap">
     <div class="ci-logo-mark">{ic("trending-down", 20)}</div>
@@ -267,16 +265,16 @@ st.html(f"""
 </div>
 """)
 
-# ─── Layout ───────────────────────────────────────────────────────────────────
+# Create two columns for layout
 left_col, right_col = st.columns([2.6, 1], gap="large")
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  LEFT COLUMN — Input form
-# ══════════════════════════════════════════════════════════════════════════════
+
+# LEFT COLUMN - Input form
 with left_col:
+    # Tabs for organizing input fields
     tab1, tab2, tab3 = st.tabs(["Personal", "Services", "Billing"])
 
-    # ── Tab 1 · Personal ──────────────────────────────────────────────────────
+    # Tab 1: Personal information
     with tab1:
         st.html(f'<div class="ci-section">{ic("user", 13)} Basic information</div>')
         c1, c2 = st.columns(2)
@@ -295,12 +293,13 @@ with left_col:
         st.html(f'<div class="ci-section">{ic("clock", 13)} Tenure</div>')
         tenure_months = st.slider("Months with company", 0, 72, 12)
 
-    # ── Tab 2 · Services ─────────────────────────────────────────────────────
+    # Tab 2: Services
     with tab2:
         st.html(f'<div class="ci-section">{ic("wifi", 13)} Connectivity</div>')
         c1, c2 = st.columns(2)
         with c1:
             phone_service = st.selectbox("Phone service", ["Yes", "No"])
+            # Multiple lines only available if phone service is Yes
             multiple_lines = (
                 st.selectbox("Multiple lines", ["Yes", "No"])
                 if phone_service == "Yes"
@@ -311,9 +310,10 @@ with left_col:
                 "Internet service", ["DSL", "Fiber optic", "No"]
             )
 
+        # Show add-ons only if customer has internet
         if internet_service != "No":
             st.html(
-                f'<div class="ci-section">' f'{ic("shield", 13)} Online add-ons</div>'
+                f'<div class="ci-section">{ic("shield", 13)} Online add-ons</div>'
             )
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -326,11 +326,12 @@ with left_col:
                 streaming_tv = st.selectbox("Streaming TV", ["Yes", "No"])
                 streaming_movies = st.selectbox("Streaming movies", ["Yes", "No"])
         else:
+            # Set all internet-dependent services to "No internet service"
             online_security = online_backup = device_protection = tech_support = (
                 streaming_tv
             ) = streaming_movies = "No internet service"
 
-    # ── Tab 3 · Billing ───────────────────────────────────────────────────────
+    # Tab 3: Billing
     with tab3:
         st.html(f'<div class="ci-section">{ic("file", 13)} Contract</div>')
         c1, c2 = st.columns(2)
@@ -357,11 +358,12 @@ with left_col:
                 "Monthly charges ($)", min_value=0.0, value=95.5, step=1.0
             )
         with c2:
+            # Auto-calculate total charges based on tenure
             total_charges = round(tenure_months * monthly_charges, 2)
             st.metric("Estimated Total Charges", f"${total_charges:,.2f}")
             st.caption("Calculated automatically from tenure and monthly charges.")
 
-    # ── Customer Snapshot (below tabs) ───────────────────────────────────────
+    # Customer snapshot card
     snapshot_data = {
         "gender": gender,
         "senior_citizen": senior_citizen,
@@ -376,11 +378,9 @@ with left_col:
     st.html(customer_snapshot(snapshot_data))
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  RIGHT COLUMN — Prediction panel
-# ══════════════════════════════════════════════════════════════════════════════
+# RIGHT COLUMN - Prediction results panel
 with right_col:
-
+    # Show prediction results if available
     if (
         st.session_state.has_prediction
         and st.session_state.last_prediction
@@ -390,13 +390,14 @@ with right_col:
         probability = result["churn_probability"] * 100
         risk_level = result["risk_level"]
 
+        # Set color and emoji based on risk level
         risk_color, risk_emoji = {
-            "High": ("#c0392b", "🔴"),
+            "High":   ("#c0392b", "🔴"),
             "Medium": ("#d68910", "🟡"),
-            "Low": ("#1e8449", "🟢"),
+            "Low":    ("#1e8449", "🟢"),
         }.get(risk_level, ("#1a1714", "⚪"))
 
-        # ── Circular gauge ────────────────────────────────────────────────────
+        # Display circular gauge
         st.markdown(
             f"""
 <div class="ci-gauge-wrap">
@@ -409,7 +410,7 @@ with right_col:
             unsafe_allow_html=True,
         )
 
-        # ── st.metric cards ────────────────────────────────────────────────────
+        # Display metric cards
         m1, m2 = st.columns(2)
         with m1:
             st.metric(
@@ -418,8 +419,7 @@ with right_col:
                 help="Probability that the customer will cancel their subscription in the coming months",
             )
         with m2:
-            # Compare to a typical baseline of ~26% churn (Telco dataset avg)
-            baseline = 26.0
+            baseline = 26.0  # Average market churn rate
             delta_val = probability - baseline
             st.metric(
                 label="vs. Baseline",
@@ -429,7 +429,7 @@ with right_col:
                 help="Comparison with the average market churn rate (~26%).",
             )
 
-        # ── Key risk factors (friendly labels) ────────────────────────────────
+        # Display key risk factors
         if st.session_state.top_factors:
             st.markdown(
                 '<div class="ci-risk-head">Key Risk Factors</div>',
@@ -439,8 +439,7 @@ with right_col:
                 friendly_factor(f) for f in st.session_state.top_factors
             ]
             badges = "".join(
-                f'<span class="ci-badge">{f}</span>'
-                for f in friendly_factors
+                f'<span class="ci-badge">{f}</span>' for f in friendly_factors
             )
             st.markdown(
                 f'<div class="ci-badges">{badges}</div>',
@@ -449,7 +448,7 @@ with right_col:
 
         st.html('<hr class="ci-divider-light">')
 
-        # ── Recommendation ────────────────────────────────────────────────────
+        # Display recommendation
         st.markdown(
             f"""
         <div class="ci-recommendation">
@@ -460,6 +459,7 @@ with right_col:
             unsafe_allow_html=True,
         )
 
+    # Show empty state if no prediction yet
     elif not st.session_state.is_loading:
         empty_state_html = f"""
             <div class="ci-empty-state">
@@ -473,10 +473,11 @@ with right_col:
             """
         st.markdown(empty_state_html, unsafe_allow_html=True)
 
-    # ── Button ────────────────────────────────────────────────────────────────
+    # Prediction button
     btn_placeholder = st.empty()
 
     if st.session_state.is_loading:
+        # Show loading animation
         btn_placeholder.markdown(
             '<div class="ci-button-loading">'
             '<div class="ci-spinner"></div>'
@@ -494,39 +495,47 @@ with right_col:
             st.session_state.is_loading = True
             st.rerun()
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  Prediction logic
-# ══════════════════════════════════════════════════════════════════════════════
+
+# Prediction logic - runs only when loading flag is set
 if st.session_state.is_loading:
+    # Build payload from form values
     payload = {
-        "gender": gender,
-        "senior_citizen": senior_citizen,
-        "partner": partner,
-        "dependents": dependents,
-        "tenure_months": tenure_months,
-        "phone_service": phone_service,
-        "multiple_lines": multiple_lines,
-        "internet_service": internet_service,
-        "online_security": online_security,
-        "online_backup": online_backup,
+        "gender":            gender,
+        "senior_citizen":    senior_citizen,
+        "partner":           partner,
+        "dependents":        dependents,
+        "tenure_months":     tenure_months,
+        "phone_service":     phone_service,
+        "multiple_lines":    multiple_lines,
+        "internet_service":  internet_service,
+        "online_security":   online_security,
+        "online_backup":     online_backup,
         "device_protection": device_protection,
-        "tech_support": tech_support,
-        "streaming_tv": streaming_tv,
-        "streaming_movies": streaming_movies,
-        "contract": contract,
+        "tech_support":      tech_support,
+        "streaming_tv":      streaming_tv,
+        "streaming_movies":  streaming_movies,
+        "contract":          contract,
         "paperless_billing": paperless_billing,
-        "payment_method": payment_method,
-        "monthly_charges": monthly_charges,
-        "total_charges": total_charges,
+        "payment_method":    payment_method,
+        "monthly_charges":   monthly_charges,
+        "total_charges":     total_charges,
     }
 
     try:
+        # Send request to API
         resp = requests.post(API_URL, json=payload, timeout=10)
         if resp.status_code == 200:
             result = resp.json()
             st.session_state.top_factors = result.get("top_factors", [])
             st.session_state.has_prediction = True
             st.session_state.last_prediction = result
+        elif resp.status_code == 422:
+            detail = resp.json().get("detail", "Invalid input.")
+            st.error(f"Validation error: {detail}")
+            st.session_state.has_prediction = False
+        elif resp.status_code == 503:
+            st.error("Prediction service unavailable. The model may not be loaded.")
+            st.session_state.has_prediction = False
         else:
             st.error(f"Prediction failed — status {resp.status_code}")
             st.session_state.has_prediction = False
@@ -541,10 +550,12 @@ if st.session_state.is_loading:
         st.error(f"Unexpected error: {err}")
         st.session_state.has_prediction = False
 
+    # Reset loading state and refresh
     st.session_state.is_loading = False
     st.rerun()
 
-# ─── Footer ───────────────────────────────────────────────────────────────────
+
+# Footer
 st.html(
     '<div class="ci-footer">'
     "Churn Intelligence · Powered by Machine Learning · v2.1"

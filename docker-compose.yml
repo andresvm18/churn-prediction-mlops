@@ -1,22 +1,31 @@
 services:
-  # FastAPI backend service
+  # FastAPI backend service for churn predictions
   api:
     build:
-      context: .                    # Use current directory as build context
-      dockerfile: Dockerfile.api    # Specific Dockerfile for API
-    container_name: churn-api       # Name of the container
+      context: .                    # Build from current directory
+      dockerfile: Dockerfile.api    # Use this Dockerfile for API
+    container_name: churn-api       # Container name for easy reference
     ports:
       - "8000:8000"                 # Map host port 8000 to container port 8000
+    restart: unless-stopped         # Auto-restart unless manually stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # Check /health endpoint
+      interval: 30s                 # Run health check every 30 seconds
+      timeout: 10s                  # Timeout after 10 seconds
+      retries: 3                    # Retry 3 times before marking unhealthy
+      start_period: 15s             # Wait 15 seconds before starting health checks
 
-  # Streamlit frontend service
+  # Streamlit dashboard frontend
   dashboard:
     build:
-      context: .                    # Use current directory as build context
-      dockerfile: Dockerfile.streamlit  # Specific Dockerfile for Streamlit
-    container_name: churn-dashboard # Name of the container
+      context: .                    # Build from current directory
+      dockerfile: Dockerfile.streamlit  # Use this Dockerfile for dashboard
+    container_name: churn-dashboard     # Container name for easy reference
     ports:
       - "8501:8501"                 # Map host port 8501 to container port 8501
+    restart: unless-stopped         # Auto-restart unless manually stopped
     depends_on:
-      - api                         # Wait for API service to start first
+      api:
+        condition: service_healthy  # Wait for API to be healthy before starting
     environment:
-      - API_URL=http://api:8000/predict
+      - API_URL=http://api:8000/predict  # Tell dashboard where to find the API
