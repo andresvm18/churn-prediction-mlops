@@ -43,153 +43,159 @@ Using customer demographics, subscription information, account history, and serv
 ### Machine Learning Pipeline
 - Data cleaning and preprocessing
 - Missing value handling
-- Feature encoding
-- Feature selection
+- Feature encoding with LabelEncoder
+- Feature selection (leakage-free)
 - Train/Test split
 - SMOTE class balancing
 - XGBoost classification
-- Model evaluation
+- Model evaluation with classification report
 - Model persistence with Joblib
+- Training metadata saved to JSON (date, metrics, hyperparameters)
 
 ### Explainable AI (XAI)
 
 The project includes SHAP (SHapley Additive Explanations) for model interpretability.
 
-#### Features:
 - Global feature importance
 - Local prediction explanations
-- Top churn risk factors per customer
-- Business-friendly insights
+- Top 3 churn risk factors per customer, returned as `"Column: value"` strings
+- Business-friendly labels in the dashboard
 
 ### FastAPI Backend
 
 REST API providing:
 
+- Strict input validation via Pydantic `Literal` types and `Field` constraints
 - Real-time predictions
 - Churn probability estimation
-- Risk classification
+- Risk classification (Low / Medium / High)
 - Personalized recommendations
 - SHAP-based feature explanations
+- Structured error responses (422 / 503 / 500)
 - Interactive Swagger documentation
 
 ### Streamlit Dashboard
 
 Modern customer-facing interface featuring:
 
-- Customer profile forms
-- Risk visualization
-- Churn probability indicators
-- Risk factor badges
+- Customer profile forms organized in tabs
+- Circular gauge for churn probability
+- Risk factor badges with human-readable labels
 - Recommendation panel
-- Responsive UI
-- Professional styling
+- Customer snapshot card
+- Responsive UI with professional styling
 
 ### Dockerized Deployment
 
 The application is fully containerized using Docker Compose.
 
-Services:
-
-- FastAPI Backend
-- Streamlit Frontend
+- FastAPI backend with `/health` healthcheck endpoint
+- Streamlit frontend waits for API to be healthy before starting (`condition: service_healthy`)
+- Automatic restart policy (`unless-stopped`)
 
 ## Tech Stack
 
 | Category | Technology |
 |----------|------------|
-| Language | Python |
+| Language | Python 3.11 |
 | ML Framework | Scikit-Learn |
 | Model | XGBoost |
+| Class Balancing | imbalanced-learn (SMOTE) |
 | Explainability | SHAP |
-| Data Processing | Pandas |
-| Numerical Computing | NumPy |
+| Data Processing | Pandas / NumPy |
 | API | FastAPI |
 | Dashboard | Streamlit |
 | Containerization | Docker |
 | Orchestration | Docker Compose |
 | Serialization | Joblib |
+| Testing | Pytest + pytest-cov |
+| CI/CD | GitHub Actions |
 
 ## Project Structure
 
 ~~~
-customer-churn-prediction/ 
-│ 
+customer-churn-prediction/
+│
 ├── .github/
 │   └── workflows/
 │       └── tests.yml
-│ 
+│
 ├── api/
-│   ├── __init__.py 
-│   ├── main.py 
-│   ├── model_service.py
-│   └── schemas.py
-│ 
+│   ├── __init__.py
+│   ├── config.py          # Single source of truth: paths, columns, thresholds
+│   ├── main.py            # FastAPI app and endpoint definitions
+│   ├── model_service.py   # Prediction pipeline and SHAP logic
+│   └── schemas.py         # Pydantic request/response schemas
+│
 ├── app/
-│   ├── assets/ 
-│   ├── streamlit_app.py 
-│   └── styles.css 
-│ 
-├── data/ 
+│   ├── streamlit_app.py
+│   └── styles.css
+│
+├── data/
 │   ├── raw/
 │   │   └── telco_churn.xlsx
-│   └── processed/ 
-│ 
-├── IMAGES/ 
-│   └── Dashboard.png
+│   └── processed/
 │
-├── notebooks/ 
+├── images/
+│   ├── dashboard-home.png
+│   ├── dashboard-prediction.png
+│   └── swagger-api.png
+│
+├── notebooks/
 │   ├── 01_eda_analysis.ipynb
-│   └── 02_model_explainability.ipynb 
+│   └── 02_model_explainability.ipynb
 │
-├── scripts/ 
-│   └── train_model.py 
-│ 
-├── src/ 
-│   ├── data/
-│   └── models/ 
+├── scripts/
+│   └── train_model.py     # Structured training pipeline with metadata output
+│
+├── src/
+│   └── models/
+│       ├── churn_model.pkl
+│       ├── label_encoders.pkl
+│       └── metadata.json  # Training date, metrics, hyperparameters
 │
 ├── tests/
-│   ├── test_api.py
-│   └── test_model.py
+│   ├── test_api.py           # Endpoint tests including validation and error cases
+│   ├── test_model.py         # Business logic tests
+│   └── test_preprocessing.py # Encoding, risk level, and SHAP factor tests
 │
 ├── .dockerignore
+├── .flake8
 ├── .gitignore
-├── docker-compose.yml 
-├── Dockerfile.api 
-├── Dockerfile.streamlit 
+├── docker-compose.yml
+├── Dockerfile.api
+├── Dockerfile.streamlit
 ├── pytest.ini
 ├── README.md
-├── requirements-dev.txt 
-├── requirements-prod.txt 
-└── requirements.txt 
+├── requirements-dev.txt
+├── requirements-prod.txt
+└── requirements.txt
 ~~~
 
 ## Dataset
 
-**Dataset used:** IBM Telco Customer Churn Dataset
+**Dataset:** IBM Telco Customer Churn Dataset
 
-**Target variable:** Churn Value
+**Target variable:** `Churn Value`
 
-Values:
-
-- 1 = Customer churns
-- 0 = Customer remains
+- `1` = Customer churns
+- `0` = Customer remains
 
 ## Model Performance
 
 Current production model: **XGBoost + SMOTE**
 
-| Metric | Score |
-|----------|--------|
-| Accuracy | 73% |
-| Recall | 73% |
-| F1 Score | 59% |
+| Metric | Class 0 (No Churn) | Class 1 (Churn) |
+|--------|-------------------|-----------------|
+| Precision | 0.88 | 0.58 |
+| Recall | 0.82 | 0.68 |
+| F1 Score | 0.85 | 0.63 |
+| **Accuracy** | | **78.5%** |
 
-Business objective: Maximize customer churn detection while maintaining acceptable precision.
-
-The dataset is naturally imbalanced, making recall an important metric for identifying customers at risk.
+Business objective: maximize churn detection (recall on class 1) while maintaining acceptable precision. The dataset is naturally imbalanced (~27% churn), which is addressed with SMOTE during training.
 
 ## API Endpoints
+
 **Health Check**
 ~~~
 GET /health
@@ -205,7 +211,6 @@ Response:
 POST /predict
 
 Example Request:
-
 {
   "gender": "Female",
   "senior_citizen": 0,
@@ -225,30 +230,32 @@ Example Request:
   "paperless_billing": "Yes",
   "payment_method": "Electronic check",
   "monthly_charges": 95.5,
-  "total_charges": 1100.0
+  "total_charges": 1146.0
 }
 
 Example Response:
-
 {
   "prediction": 1,
   "prediction_label": "Churn",
-  "churn_probability": 0.91,
+  "churn_probability": 0.9137,
   "risk_level": "High",
   "recommendation": "Customer is at high risk of churn. Consider retention actions.",
   "top_factors": [
-    "Contract",
-    "Monthly Charges",
-    "Internet Service"
+    "Contract: Month-to-month",
+    "Monthly Charges: 95.5",
+    "Tenure Months: 12"
   ]
 }
 ~~~
+
+**Validation errors** return HTTP `422` with a description of the invalid field.
+**Service unavailable** (model not loaded) returns HTTP `503`.
 
 ## Running Locally
 
 **Clone Repository**
 ~~~
-git clone https://github.com/andresvm18/customer-churn-prediction.git 
+git clone https://github.com/andresvm18/customer-churn-prediction.git
 cd customer-churn-prediction
 ~~~
 
@@ -256,29 +263,38 @@ cd customer-churn-prediction
 ~~~
 python -m venv venv
 
-Windows:
-  venv\Scripts\activate
+# Windows:
+venv\Scripts\activate
 
-Linux / Mac:
-  source venv/bin/activate
+# Linux / Mac:
+source venv/bin/activate
 ~~~
 
 **Install Dependencies**
 ~~~
-Development environment:
-  pip install -r requirements-dev.txt
+# Development (includes training, testing, and linting tools):
+pip install -r requirements-dev.txt
 
-Production environment:
-  pip install -r requirements-prod.txt
+# Production only:
+pip install -r requirements-prod.txt
 ~~~
+
+**Train the Model**
+~~~
+python scripts/train_model.py
+~~~
+
+This generates:
+- `src/models/churn_model.pkl`
+- `src/models/label_encoders.pkl`
+- `src/models/metadata.json`
 
 **Run FastAPI**
 ~~~
 uvicorn api.main:app --reload
 
-API available at: http://127.0.0.1:8000
-
-Swagger UI: http://127.0.0.1:8000/docs
+API available at:  http://127.0.0.1:8000
+Swagger UI:        http://127.0.0.1:8000/docs
 ~~~
 
 **Run Streamlit**
@@ -290,12 +306,17 @@ Dashboard: http://localhost:8501
 
 **Docker Deployment**
 ~~~
-Build and run both services: docker compose up --build
+# Build and start both services:
+docker compose up --build
 
-Run in background: docker compose up -d --build
+# Run in background:
+docker compose up -d --build
 
-Stop services: docker compose down
+# Stop services:
+docker compose down
 ~~~
+
+The dashboard container waits for the API healthcheck to pass before starting.
 
 ## Docker Architecture
 ~~~
@@ -304,12 +325,13 @@ Stop services: docker compose down
 │     Dashboard       │
 │     Port 8501       │
 └──────────┬──────────┘
-           │
+           │ (waits for healthy)
            ▼
 ┌─────────────────────┐
 │      FastAPI        │
 │   Prediction API    │
 │     Port 8000       │
+│   GET /health ✓     │
 └──────────┬──────────┘
            │
            ▼
@@ -324,70 +346,63 @@ Stop services: docker compose down
 Dataset
    │
    ▼
-  EDA
+  EDA (notebooks/)
    │
    ▼
-Preprocessing
+Preprocessing + Encoding
    │
    ▼
  SMOTE
    │
    ▼
-XGBoost
+XGBoost Training
    │
    ▼
-Joblib Model
+Joblib Artifacts + metadata.json
    │
-   ├── FastAPI
+   ├── FastAPI (api/)
    │
-   └── Streamlit
+   └── Streamlit (app/)
 ~~~
 
 ## CI/CD Pipeline
 
-The project uses GitHub Actions to:
+GitHub Actions runs on every push and pull request to `main`:
 
-- Install project dependencies
-- Run automated tests
-- Validate application integrity on every push and pull request
+1. Install dependencies (`requirements-dev.txt`)
+2. Run all tests with coverage (`pytest --cov=api`)
+3. Check code style (`flake8`)
+4. Validate formatting (`black --check`)
 
-Workflow: **Developer → Push → GitHub Actions → Tests → Pass/Fail**
+**Workflow:** Developer → Push → GitHub Actions → Tests + Lint → Pass / Fail
 
-## Testing & CI/CD
+## Testing
 
-The project includes automated testing and continuous integration.
+The project includes 45 automated tests across 3 files with 78% coverage on the API layer.
 
-### Automated Tests
+| File | What it covers |
+|------|---------------|
+| `test_api.py` | Endpoints: happy path, 7 validation cases (422), service errors (503 / 500) |
+| `test_model.py` | Risk level thresholds, recommendations, DataFrame building |
+| `test_preprocessing.py` | Encoding pipeline, unseen categories, SHAP factor format |
 
-- API endpoint tests
-- Business logic tests
-- Response validation tests
-
-### Continuous Integration
-
-GitHub Actions automatically:
-
-- Installs dependencies
-- Runs all unit tests
-- Validates code before merge
-
-Run tests locally:
+Run locally:
 
 ~~~
+# All tests with coverage:
+pytest --cov=api --cov-report=term-missing -v
+
+# Quick run:
 pytest
 ~~~
 
 ## Future Improvements
 
-Planned enhancements:
-
-- MLflow experiment tracking
-- Cloud deployment (Render / Railway)
-- Monitoring and logging
-- Authentication and authorization
-- Model versioning
-- Automated retraining pipeline
-- Data drift detection
+- MLflow experiment tracking and model versioning
+- Automated retraining pipeline with data drift detection
+- Authentication and authorization (API key / JWT)
+- Cloud deployment monitoring and alerting
+- A/B testing for model versions
 
 ## Author
 
