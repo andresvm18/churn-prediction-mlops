@@ -22,6 +22,7 @@ app = FastAPI(
     version="2.1.0",
 )
 
+
 # Root endpoint - API info
 @app.get("/")
 def root():
