@@ -142,7 +142,8 @@ def gauge_svg(probability: float, risk_color: str) -> str:
     dot_x, dot_y = polar(cx, cy, r, start_deg + fill_sweep)
 
     return f"""
-<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}" xmlns="http://www.w3.org/2000/svg">
+<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}" 
+     xmlns="http://www.w3.org/2000/svg">
   <!-- Background arc -->
   <path d="{bg_path}" fill="none" stroke="{stroke_bg}" stroke-width="{track_width}"
         stroke-linecap="round"/>
@@ -408,7 +409,10 @@ with right_col:
             st.metric(
                 label="Churn Probability",
                 value=f"{probability:.1f}%",
-                help="Probability that the customer will cancel their subscription in the coming months",
+                help=(
+                    "Probability that the customer will cancel their "
+                    "subscription in the coming months"
+                ),
             )
         with m2:
             baseline = 26.0  # Average market churn rate

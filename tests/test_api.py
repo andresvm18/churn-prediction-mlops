@@ -41,7 +41,10 @@ def mock_prediction():
         "prediction_label": "Churn",
         "churn_probability": 0.9137,
         "risk_level": "High",
-        "recommendation": "Customer is at high risk of churn. Consider retention actions.",
+        "recommendation": (
+            "Customer is at high risk of churn. "
+            "Consider retention actions."
+        ),
         "top_factors": [
             "Contract: Month-to-month",
             "Monthly Charges: 95.5",
