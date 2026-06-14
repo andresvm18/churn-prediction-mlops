@@ -1,7 +1,6 @@
 import logging
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
 
 from api.schemas import CustomerData
 from api.model_service import predict_customer_churn
