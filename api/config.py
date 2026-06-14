@@ -8,7 +8,7 @@ RAW_DATA_PATH = "data/raw/telco_churn.xlsx"
 
 # Columns to remove before training (leakage, identifiers, geography)
 COLUMNS_TO_REMOVE = [
-    "Churn Value",      # Target variable - handled separately
+    "Churn Value",  # Target variable - handled separately
     # Leakage columns (not available at prediction time)
     "Churn Label",
     "Churn Score",
@@ -51,19 +51,19 @@ CATEGORICAL_COLUMNS = [
 ]
 
 # Risk level thresholds (probability values between 0 and 1)
-RISK_THRESHOLD_HIGH = 0.7      # >= 70% = High risk
-RISK_THRESHOLD_MEDIUM = 0.4    # >= 40% = Medium risk, below 40% = Low risk
+RISK_THRESHOLD_HIGH = 0.7  # >= 70% = High risk
+RISK_THRESHOLD_MEDIUM = 0.4  # >= 40% = Medium risk, below 40% = Low risk
 
 # Baseline churn rate for dashboard comparison (percentage)
 BASELINE_CHURN_RATE = 26.0
 
 # XGBoost model hyperparameters
 XGBOOST_PARAMS = {
-    "n_estimators": 200,        # Number of trees
-    "max_depth": 6,             # Maximum tree depth
-    "learning_rate": 0.05,      # Step size shrinkage
-    "subsample": 0.8,           # Fraction of samples per tree
-    "colsample_bytree": 0.8,    # Fraction of features per tree
-    "random_state": 42,         # Reproducibility seed
-    "eval_metric": "logloss",   # Evaluation metric
+    "n_estimators": 200,  # Number of trees
+    "max_depth": 6,  # Maximum tree depth
+    "learning_rate": 0.05,  # Step size shrinkage
+    "subsample": 0.8,  # Fraction of samples per tree
+    "colsample_bytree": 0.8,  # Fraction of features per tree
+    "random_state": 42,  # Reproducibility seed
+    "eval_metric": "logloss",  # Evaluation metric
 }

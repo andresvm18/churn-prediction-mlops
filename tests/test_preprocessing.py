@@ -45,21 +45,21 @@ def sample_customer():
 @pytest.fixture
 def sample_encoders():
     values_per_col = {
-        "Gender":            ["Female", "Male"],
-        "Partner":           ["No", "Yes"],
-        "Dependents":        ["No", "Yes"],
-        "Phone Service":     ["No", "Yes"],
-        "Multiple Lines":    ["No", "No phone service", "Yes"],
-        "Internet Service":  ["DSL", "Fiber optic", "No"],
-        "Online Security":   ["No", "No internet service", "Yes"],
-        "Online Backup":     ["No", "No internet service", "Yes"],
+        "Gender": ["Female", "Male"],
+        "Partner": ["No", "Yes"],
+        "Dependents": ["No", "Yes"],
+        "Phone Service": ["No", "Yes"],
+        "Multiple Lines": ["No", "No phone service", "Yes"],
+        "Internet Service": ["DSL", "Fiber optic", "No"],
+        "Online Security": ["No", "No internet service", "Yes"],
+        "Online Backup": ["No", "No internet service", "Yes"],
         "Device Protection": ["No", "No internet service", "Yes"],
-        "Tech Support":      ["No", "No internet service", "Yes"],
-        "Streaming TV":      ["No", "No internet service", "Yes"],
-        "Streaming Movies":  ["No", "No internet service", "Yes"],
-        "Contract":          ["Month-to-month", "One year", "Two year"],
+        "Tech Support": ["No", "No internet service", "Yes"],
+        "Streaming TV": ["No", "No internet service", "Yes"],
+        "Streaming Movies": ["No", "No internet service", "Yes"],
+        "Contract": ["Month-to-month", "One year", "Two year"],
         "Paperless Billing": ["No", "Yes"],
-        "Payment Method":    [
+        "Payment Method": [
             "Bank transfer (automatic)",
             "Credit card (automatic)",
             "Electronic check",
@@ -106,9 +106,9 @@ class TestEncodeInputData:
         raw = build_input_dataframe(sample_customer)
         encoded = encode_input_data(raw, sample_encoders)
         for col in CATEGORICAL_COLUMNS:
-            assert pd.api.types.is_numeric_dtype(encoded[col]), (
-                f"Column '{col}' is not numeric after encoding"
-            )
+            assert pd.api.types.is_numeric_dtype(
+                encoded[col]
+            ), f"Column '{col}' is not numeric after encoding"
 
     def test_shape_preserved(self, sample_customer, sample_encoders):
         raw = build_input_dataframe(sample_customer)
@@ -176,7 +176,9 @@ class TestGetRecommendation:
 # Tests for get_top_factors function
 class TestGetTopFactors:
 
-    def test_returns_empty_list_when_no_explainer(self, sample_customer, sample_encoders):
+    def test_returns_empty_list_when_no_explainer(
+        self, sample_customer, sample_encoders
+    ):
         raw = build_input_dataframe(sample_customer)
         encoded = encode_input_data(raw, sample_encoders)
         result = get_top_factors(encoded, raw, explainer=None)
@@ -208,4 +210,6 @@ class TestGetTopFactors:
         result = get_top_factors(encoded, raw, mock_explainer, n=3)
         # Verify each factor contains the colon separator
         for factor in result:
-            assert ": " in factor, f"Factor '{factor}' does not have 'Column: value' format"
+            assert (
+                ": " in factor
+            ), f"Factor '{factor}' does not have 'Column: value' format"

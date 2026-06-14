@@ -51,21 +51,17 @@ ICONS = {
     ),
     "shield": '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
     "clock": (
-        '<circle cx="12" cy="12" r="10"/>'
-        '<polyline points="12 6 12 12 16 14"/>'
+        '<circle cx="12" cy="12" r="10"/>' '<polyline points="12 6 12 12 16 14"/>'
     ),
     "dollar": (
-        '<line x1="12" y1="1" x2="12" y2="23"/>'
-        '<line x1="17" y1="5" x2="7" y2="19"/>'
+        '<line x1="12" y1="1" x2="12" y2="23"/>' '<line x1="17" y1="5" x2="7" y2="19"/>'
     ),
     "file": (
         '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
         '<polyline points="14 2 14 8 20 8"/>'
     ),
     "alert-triangle": (
-        '<path d="M12 9v4"/>'
-        '<path d="M12 17h.01"/>'
-        '<path d="M12 3L3 21h18L12 3z"/>'
+        '<path d="M12 9v4"/>' '<path d="M12 17h.01"/>' '<path d="M12 3L3 21h18L12 3z"/>'
     ),
     "bar-chart": (
         '<line x1="18" y1="20" x2="18" y2="10"/>'
@@ -87,25 +83,25 @@ def ic(name: str, size: int = 14) -> str:
 
 # Map column names to user-friendly display labels
 COLUMN_LABELS = {
-    "Contract":          "Contract type",
-    "Monthly Charges":   "Monthly charges",
-    "Total Charges":     "Total charges",
-    "Tenure Months":     "Tenure (months)",
-    "Internet Service":  "Internet service",
-    "Payment Method":    "Payment method",
-    "Online Security":   "Online security",
-    "Tech Support":      "Tech support",
-    "Online Backup":     "Online backup",
+    "Contract": "Contract type",
+    "Monthly Charges": "Monthly charges",
+    "Total Charges": "Total charges",
+    "Tenure Months": "Tenure (months)",
+    "Internet Service": "Internet service",
+    "Payment Method": "Payment method",
+    "Online Security": "Online security",
+    "Tech Support": "Tech support",
+    "Online Backup": "Online backup",
     "Device Protection": "Device protection",
-    "Streaming TV":      "Streaming TV",
-    "Streaming Movies":  "Streaming movies",
-    "Multiple Lines":    "Multiple lines",
+    "Streaming TV": "Streaming TV",
+    "Streaming Movies": "Streaming movies",
+    "Multiple Lines": "Multiple lines",
     "Paperless Billing": "Paperless billing",
-    "Partner":           "Has partner",
-    "Dependents":        "Has dependents",
-    "Senior Citizen":    "Senior citizen",
-    "Gender":            "Gender",
-    "Phone Service":     "Phone service",
+    "Partner": "Has partner",
+    "Dependents": "Has dependents",
+    "Senior Citizen": "Senior citizen",
+    "Gender": "Gender",
+    "Phone Service": "Phone service",
 }
 
 
@@ -141,7 +137,7 @@ def gauge_svg(probability: float, risk_color: str) -> str:
     bg_path = arc_path(cx, cy, r, start_deg, total_angle)
     fill_sweep = total_angle * (probability / 100)
     fill_path = arc_path(cx, cy, r, start_deg, max(fill_sweep, 0.1))
-    
+
     # Calculate dot position at the end of the fill arc
     dot_x, dot_y = polar(cx, cy, r, start_deg + fill_sweep)
 
@@ -187,17 +183,15 @@ def customer_snapshot(data: dict) -> str:
     )
 
     # Format tenure display
-    tenure_label = (
-        f"{data['tenure_months']}mo" if data["tenure_months"] > 0 else "New"
-    )
+    tenure_label = f"{data['tenure_months']}mo" if data["tenure_months"] > 0 else "New"
 
     # Key metrics to display
     rows = [
-        ("Tenure",   tenure_label),
+        ("Tenure", tenure_label),
         ("Contract", contract_short),
         ("Internet", f"{internet_icon} {data['internet_service']}"),
-        ("Payment",  data["payment_method"].split(" ")[0]),
-        ("Monthly",  f"${data['monthly_charges']:.0f}"),
+        ("Payment", data["payment_method"].split(" ")[0]),
+        ("Monthly", f"${data['monthly_charges']:.0f}"),
     ]
 
     # Generate HTML for each row
@@ -216,9 +210,7 @@ def customer_snapshot(data: dict) -> str:
         else ""
     )
     partner_badge = (
-        '<span class="ci-snap-badge">Partner</span>'
-        if data["partner"] == "Yes"
-        else ""
+        '<span class="ci-snap-badge">Partner</span>' if data["partner"] == "Yes" else ""
     )
     dep_badge = (
         '<span class="ci-snap-badge">Dependents</span>'
@@ -254,7 +246,8 @@ for key, default in [
 
 
 # Header section
-st.html(f"""
+st.html(
+    f"""
 <div class="ci-header-wrap">
     <div class="ci-logo-mark">{ic("trending-down", 20)}</div>
     <div class="ci-header-text">
@@ -263,7 +256,8 @@ st.html(f"""
     </div>
     <div class="ci-header-badge">● ML Model v2.1</div>
 </div>
-""")
+"""
+)
 
 # Create two columns for layout
 left_col, right_col = st.columns([2.6, 1], gap="large")
@@ -312,9 +306,7 @@ with left_col:
 
         # Show add-ons only if customer has internet
         if internet_service != "No":
-            st.html(
-                f'<div class="ci-section">{ic("shield", 13)} Online add-ons</div>'
-            )
+            st.html(f'<div class="ci-section">{ic("shield", 13)} Online add-ons</div>')
             c1, c2, c3 = st.columns(3)
             with c1:
                 online_security = st.selectbox("Online security", ["Yes", "No"])
@@ -392,9 +384,9 @@ with right_col:
 
         # Set color and emoji based on risk level
         risk_color, risk_emoji = {
-            "High":   ("#c0392b", "🔴"),
+            "High": ("#c0392b", "🔴"),
             "Medium": ("#d68910", "🟡"),
-            "Low":    ("#1e8449", "🟢"),
+            "Low": ("#1e8449", "🟢"),
         }.get(risk_level, ("#1a1714", "⚪"))
 
         # Display circular gauge
@@ -500,25 +492,25 @@ with right_col:
 if st.session_state.is_loading:
     # Build payload from form values
     payload = {
-        "gender":            gender,
-        "senior_citizen":    senior_citizen,
-        "partner":           partner,
-        "dependents":        dependents,
-        "tenure_months":     tenure_months,
-        "phone_service":     phone_service,
-        "multiple_lines":    multiple_lines,
-        "internet_service":  internet_service,
-        "online_security":   online_security,
-        "online_backup":     online_backup,
+        "gender": gender,
+        "senior_citizen": senior_citizen,
+        "partner": partner,
+        "dependents": dependents,
+        "tenure_months": tenure_months,
+        "phone_service": phone_service,
+        "multiple_lines": multiple_lines,
+        "internet_service": internet_service,
+        "online_security": online_security,
+        "online_backup": online_backup,
         "device_protection": device_protection,
-        "tech_support":      tech_support,
-        "streaming_tv":      streaming_tv,
-        "streaming_movies":  streaming_movies,
-        "contract":          contract,
+        "tech_support": tech_support,
+        "streaming_tv": streaming_tv,
+        "streaming_movies": streaming_movies,
+        "contract": contract,
         "paperless_billing": paperless_billing,
-        "payment_method":    payment_method,
-        "monthly_charges":   monthly_charges,
-        "total_charges":     total_charges,
+        "payment_method": payment_method,
+        "monthly_charges": monthly_charges,
+        "total_charges": total_charges,
     }
 
     try:

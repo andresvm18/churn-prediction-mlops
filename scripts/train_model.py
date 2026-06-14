@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 def load_data(path: str) -> pd.DataFrame:
     logger.info("Loading data from %s", path)
     df = pd.read_excel(path)
-    
+
     # Strip whitespace from column names
     df.columns = df.columns.str.strip()
 
@@ -82,13 +82,17 @@ def train(
         features, target, test_size=0.2, random_state=42, stratify=target
     )
 
-    logger.info("Class distribution before SMOTE:\n%s", y_train.value_counts().to_string())
+    logger.info(
+        "Class distribution before SMOTE:\n%s", y_train.value_counts().to_string()
+    )
 
     # Apply SMOTE to balance classes
     smote = SMOTE(random_state=42)
     X_train_bal, y_train_bal = smote.fit_resample(X_train, y_train)
 
-    logger.info("Class distribution after SMOTE:\n%s", y_train_bal.value_counts().to_string())
+    logger.info(
+        "Class distribution after SMOTE:\n%s", y_train_bal.value_counts().to_string()
+    )
 
     # Train XGBoost classifier
     model = XGBClassifier(**XGBOOST_PARAMS)
@@ -143,19 +147,19 @@ def save_artifacts(model, encoders: dict, metrics: dict) -> None:
 def main() -> None:
     # Load and clean data
     df = load_data(RAW_DATA_PATH)
-    
+
     # Preprocess features and target
     features, target, encoders = preprocess(df)
-    
+
     # Train the model
     model, X_test, y_test = train(features, target)
-    
+
     # Evaluate performance
     metrics = evaluate(model, X_test, y_test)
-    
+
     # Save all artifacts
     save_artifacts(model, encoders, metrics)
-    
+
     logger.info("Pipeline complete.")
 
 

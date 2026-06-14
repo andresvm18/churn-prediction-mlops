@@ -54,27 +54,31 @@ def _load_artifacts() -> None:
 
 # Convert customer data to DataFrame
 def build_input_dataframe(customer_data) -> pd.DataFrame:
-    return pd.DataFrame([{
-        "Gender":            customer_data.gender,
-        "Senior Citizen":    customer_data.senior_citizen,
-        "Partner":           customer_data.partner,
-        "Dependents":        customer_data.dependents,
-        "Tenure Months":     customer_data.tenure_months,
-        "Phone Service":     customer_data.phone_service,
-        "Multiple Lines":    customer_data.multiple_lines,
-        "Internet Service":  customer_data.internet_service,
-        "Online Security":   customer_data.online_security,
-        "Online Backup":     customer_data.online_backup,
-        "Device Protection": customer_data.device_protection,
-        "Tech Support":      customer_data.tech_support,
-        "Streaming TV":      customer_data.streaming_tv,
-        "Streaming Movies":  customer_data.streaming_movies,
-        "Contract":          customer_data.contract,
-        "Paperless Billing": customer_data.paperless_billing,
-        "Payment Method":    customer_data.payment_method,
-        "Monthly Charges":   customer_data.monthly_charges,
-        "Total Charges":     customer_data.total_charges,
-    }])
+    return pd.DataFrame(
+        [
+            {
+                "Gender": customer_data.gender,
+                "Senior Citizen": customer_data.senior_citizen,
+                "Partner": customer_data.partner,
+                "Dependents": customer_data.dependents,
+                "Tenure Months": customer_data.tenure_months,
+                "Phone Service": customer_data.phone_service,
+                "Multiple Lines": customer_data.multiple_lines,
+                "Internet Service": customer_data.internet_service,
+                "Online Security": customer_data.online_security,
+                "Online Backup": customer_data.online_backup,
+                "Device Protection": customer_data.device_protection,
+                "Tech Support": customer_data.tech_support,
+                "Streaming TV": customer_data.streaming_tv,
+                "Streaming Movies": customer_data.streaming_movies,
+                "Contract": customer_data.contract,
+                "Paperless Billing": customer_data.paperless_billing,
+                "Payment Method": customer_data.payment_method,
+                "Monthly Charges": customer_data.monthly_charges,
+                "Total Charges": customer_data.total_charges,
+            }
+        ]
+    )
 
 
 # Encode categorical columns using saved label encoders
@@ -116,9 +120,9 @@ def get_risk_level(churn_probability: float) -> str:
 # Get recommendation based on risk level
 def get_recommendation(risk_level: str) -> str:
     recommendations = {
-        "High":   "Customer is at high risk of churn. Consider retention actions.",
+        "High": "Customer is at high risk of churn. Consider retention actions.",
         "Medium": "Customer has moderate churn risk. Monitor behavior and engagement.",
-        "Low":    "Customer has low churn risk.",
+        "Low": "Customer has low churn risk.",
     }
     return recommendations.get(risk_level, "Risk level unknown.")
 
@@ -140,10 +144,16 @@ def get_top_factors(
     import numpy as np  # Ensures compatibility with both lists and arrays
 
     # Create DataFrame with feature names and their absolute SHAP impacts
-    impacts = pd.DataFrame({
-        "feature": encoded_data.columns,
-        "impact":  np.abs(shap_values[0]),  # np.abs works with lists AND arrays
-    }).sort_values("impact", ascending=False).head(n)  # Get top n features
+    impacts = (
+        pd.DataFrame(
+            {
+                "feature": encoded_data.columns,
+                "impact": np.abs(shap_values[0]),  # np.abs works with lists AND arrays
+            }
+        )
+        .sort_values("impact", ascending=False)
+        .head(n)
+    )  # Get top n features
 
     # Build human-readable strings with actual values
     result = []
@@ -154,6 +164,7 @@ def get_top_factors(
 
     return result
 
+
 # Main prediction pipeline
 def predict_customer_churn(customer_data) -> dict:
     # Ensure model and encoders are loaded
@@ -161,7 +172,7 @@ def predict_customer_churn(customer_data) -> dict:
 
     # Build raw DataFrame
     raw_data = build_input_dataframe(customer_data)
-    
+
     # Encode categorical columns
     encoded_data = encode_input_data(raw_data, _categorical_encoders)
 
@@ -173,16 +184,16 @@ def predict_customer_churn(customer_data) -> dict:
     risk_level = get_risk_level(churn_probability)
     prediction_label = "Churn" if prediction == 1 else "No Churn"
     recommendation = get_recommendation(risk_level)
-    
+
     # Get top factors influencing the prediction
     top_factors = get_top_factors(encoded_data, raw_data, _model_explainer)
 
     # Return formatted results
     return {
-        "prediction":        prediction,
-        "prediction_label":  prediction_label,
+        "prediction": prediction,
+        "prediction_label": prediction_label,
         "churn_probability": round(churn_probability, 4),
-        "risk_level":        risk_level,
-        "recommendation":    recommendation,
-        "top_factors":       top_factors,
+        "risk_level": risk_level,
+        "recommendation": recommendation,
+        "top_factors": top_factors,
     }

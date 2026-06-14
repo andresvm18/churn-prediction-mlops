@@ -75,8 +75,14 @@ def test_predict_returns_200(mock_predict, valid_payload, mock_prediction):
 def test_predict_response_has_all_fields(mock_predict, valid_payload, mock_prediction):
     mock_predict.return_value = mock_prediction
     data = client.post("/predict", json=valid_payload).json()
-    expected_fields = ["prediction", "prediction_label", "churn_probability",
-                      "risk_level", "recommendation", "top_factors"]
+    expected_fields = [
+        "prediction",
+        "prediction_label",
+        "churn_probability",
+        "risk_level",
+        "recommendation",
+        "top_factors",
+    ]
     for field in expected_fields:
         assert field in data, f"Missing field: {field}"
 
