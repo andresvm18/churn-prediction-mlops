@@ -50,6 +50,9 @@ CATEGORICAL_COLUMNS = [
     "Payment Method",
 ]
 
+# Classification threshold
+CLASSIFICATION_THRESHOLD = 0.37
+
 # Risk level thresholds (probability values between 0 and 1)
 RISK_THRESHOLD_HIGH = 0.7  # >= 70% = High risk
 RISK_THRESHOLD_MEDIUM = 0.4  # >= 40% = Medium risk, below 40% = Low risk

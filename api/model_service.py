@@ -10,6 +10,7 @@ from api.config import (
     MODEL_PATH,
     ENCODER_PATH,
     CATEGORICAL_COLUMNS,
+    CLASSIFICATION_THRESHOLD,
     RISK_THRESHOLD_HIGH,
     RISK_THRESHOLD_MEDIUM,
 )
@@ -177,8 +178,8 @@ def predict_customer_churn(customer_data) -> dict:
     encoded_data = encode_input_data(raw_data, _categorical_encoders)
 
     # Make prediction
-    prediction = int(_churn_model.predict(encoded_data)[0])
     churn_probability = float(_churn_model.predict_proba(encoded_data)[0][1])
+    prediction = int(churn_probability >= CLASSIFICATION_THRESHOLD)
 
     # Calculate risk and recommendation
     risk_level = get_risk_level(churn_probability)
