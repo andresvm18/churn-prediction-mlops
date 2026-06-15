@@ -42,12 +42,10 @@ ICONS = {
     ),
     "shield": '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
     "clock": (
-        '<circle cx="12" cy="12" r="10"/>'
-        '<polyline points="12 6 12 12 16 14"/>'
+        '<circle cx="12" cy="12" r="10"/>' '<polyline points="12 6 12 12 16 14"/>'
     ),
     "dollar": (
-        '<line x1="12" y1="1" x2="12" y2="23"/>'
-        '<line x1="17" y1="5" x2="7" y2="19"/>'
+        '<line x1="12" y1="1" x2="12" y2="23"/>' '<line x1="17" y1="5" x2="7" y2="19"/>'
     ),
     "file": (
         '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
@@ -336,9 +334,7 @@ with left_col:
             # Auto-calculate total charges based on tenure
             total_charges = round(tenure_months * monthly_charges, 2)
             st.metric("Estimated Total Charges", f"${total_charges:,.2f}")
-            st.caption(
-                "Calculated automatically from tenure and monthly charges."
-            )
+            st.caption("Calculated automatically from tenure and monthly charges.")
 
     # Customer snapshot card
     st.html(
@@ -436,7 +432,7 @@ with right_col:
             f'<div class="ci-empty-icon">{ic("bar-chart", 22)}</div>'
             f'<p class="ci-empty-title">No prediction yet</p>'
             f'<p class="ci-empty-sub">Fill in the customer details<br>'
-            f'and run the model to see results.</p>'
+            f"and run the model to see results.</p>"
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -495,14 +491,10 @@ if st.session_state.is_loading:
             st.session_state.has_prediction = True
             st.session_state.last_prediction = result
         elif resp.status_code == 422:
-            st.error(
-                f"Validation error: {resp.json().get('detail', 'Invalid input.')}"
-            )
+            st.error(f"Validation error: {resp.json().get('detail', 'Invalid input.')}")
             st.session_state.has_prediction = False
         elif resp.status_code == 503:
-            st.error(
-                "Prediction service unavailable. The model may not be loaded."
-            )
+            st.error("Prediction service unavailable. The model may not be loaded.")
             st.session_state.has_prediction = False
         else:
             st.error(f"Prediction failed — status {resp.status_code}")
