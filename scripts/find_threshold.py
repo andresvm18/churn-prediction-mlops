@@ -3,14 +3,11 @@ import logging
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.metrics import classification_report, precision_recall_curve
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 
 # Import configuration constants
 from api.config import (
@@ -22,6 +19,8 @@ from api.config import (
     RAW_DATA_PATH,
     TARGET_COLUMN,
 )
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Set up logging
 logging.basicConfig(

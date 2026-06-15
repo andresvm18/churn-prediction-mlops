@@ -108,7 +108,8 @@ st.html(
     """
 <div class="ci-snapshot-card">
   <div class="ci-snap-header">📋&nbsp; How it works</div>
-  <div style="padding: 0.5rem 0; font-size: 0.85rem; color: var(--ci-text-muted, #6b6560); line-height: 1.8;">
+  <div style="padding: 0.5rem 0; font-size: 0.85rem;
+    color: var(--ci-text-muted, #6b6560); line-height: 1.8;">
     <b>1.</b> Download the CSV template below<br>
     <b>2.</b> Fill in your customer data (up to 1 000 rows)<br>
     <b>3.</b> Upload the file and click <em>Run batch prediction</em><br>
@@ -157,7 +158,8 @@ if uploaded_file is not None:
         f"""
     <div class="ci-snapshot-card">
       <div class="ci-snap-header">📄&nbsp; File preview</div>
-      <div style="font-size:0.8rem;color:var(--ci-text-muted,#6b6560);padding-top:0.3rem;">
+      <div style="font-size:0.8rem;color:var(--ci-text-muted,#6b6560);
+        padding-top:0.3rem;">
         <b>{len(preview_df)}</b> rows &nbsp;·&nbsp;
         <b>{len(preview_df.columns)}</b> columns detected
       </div>
@@ -242,7 +244,8 @@ if uploaded_file is not None:
 
                 elif resp.status_code == 422:
                     st.error(
-                        f"Validation error: {resp.json().get('detail', 'Invalid file.')}"
+                        f"Validation error: {resp.json().get('detail', 
+                            'Invalid file.')}"
                     )
                 elif resp.status_code == 503:
                     st.error("Prediction service unavailable. Is the model loaded?")

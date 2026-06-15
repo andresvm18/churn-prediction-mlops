@@ -20,9 +20,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
 
-# Allow imports from project root
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 # Import configuration constants
 from api.config import (
     CATEGORICAL_COLUMNS,
@@ -35,6 +32,9 @@ from api.config import (
     TARGET_COLUMN,
     XGBOOST_PARAMS,
 )
+
+# Allow imports from project root
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Set up logging
 logging.basicConfig(
