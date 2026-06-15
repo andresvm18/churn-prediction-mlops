@@ -5,16 +5,28 @@ import sys
 from datetime import datetime, timezone
 
 import joblib
+import mlflow
+import mlflow.sklearn
 import pandas as pd
 from imblearn.over_sampling import SMOTE
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    f1_score,
+    precision_score,
+    recall_score,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
 
+# Allow imports from project root
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 # Import configuration constants
 from api.config import (
     CATEGORICAL_COLUMNS,
+    CLASSIFICATION_THRESHOLD,
     COLUMNS_TO_REMOVE,
     ENCODER_PATH,
     METADATA_PATH,
@@ -24,10 +36,6 @@ from api.config import (
     XGBOOST_PARAMS,
 )
 
-
-# Allow imports from project root
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
@@ -35,12 +43,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# MLflow experiment name for tracking
+MLFLOW_EXPERIMENT = "churn-prediction"
+
 
 # Load and clean raw data
 def load_data(path: str) -> pd.DataFrame:
     logger.info("Loading data from %s", path)
     df = pd.read_excel(path)
-
+    
     # Strip whitespace from column names
     df.columns = df.columns.str.strip()
 
@@ -84,7 +95,8 @@ def train(
     )
 
     logger.info(
-        "Class distribution before SMOTE:\n%s", y_train.value_counts().to_string()
+        "Class distribution before SMOTE:\n%s",
+        y_train.value_counts().to_string(),
     )
 
     # Apply SMOTE to balance classes
@@ -92,7 +104,8 @@ def train(
     X_train_bal, y_train_bal = smote.fit_resample(X_train, y_train)
 
     logger.info(
-        "Class distribution after SMOTE:\n%s", y_train_bal.value_counts().to_string()
+        "Class distribution after SMOTE:\n%s",
+        y_train_bal.value_counts().to_string(),
     )
 
     # Train XGBoost classifier
@@ -104,18 +117,47 @@ def train(
 
 
 # Evaluate model performance
-def evaluate(model, X_test: pd.DataFrame, y_test: pd.Series) -> dict:
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    report = classification_report(y_test, y_pred, output_dict=True)
+def evaluate(
+    model,
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+    threshold: float = CLASSIFICATION_THRESHOLD,
+) -> dict:
+    # Get probabilities for churn class (index 1)
+    probabilities = model.predict_proba(X_test)[:, 1]
 
-    logger.info("Accuracy: %.4f", accuracy)
-    logger.info("\n%s", classification_report(y_test, y_pred))
+    # Predictions at configured threshold
+    y_pred = (probabilities >= threshold).astype(int)
 
-    return {
-        "accuracy": round(accuracy, 4),
-        "classification_report": report,
+    # Predictions at default 0.5 for comparison
+    y_pred_default = (probabilities >= 0.5).astype(int)
+
+    # Calculate metrics
+    metrics = {
+        # Configured threshold metrics
+        "threshold":           threshold,
+        "accuracy":            round(accuracy_score(y_test, y_pred), 4),
+        "precision_churn":     round(precision_score(y_test, y_pred), 4),
+        "recall_churn":        round(recall_score(y_test, y_pred), 4),
+        "f1_churn":            round(f1_score(y_test, y_pred), 4),
+        # Default threshold metrics (for comparison)
+        "accuracy_default":    round(accuracy_score(y_test, y_pred_default), 4),
+        "precision_default":   round(precision_score(y_test, y_pred_default), 4),
+        "recall_default":      round(recall_score(y_test, y_pred_default), 4),
+        "f1_default":          round(f1_score(y_test, y_pred_default), 4),
+        # Full report as dict
+        "classification_report": classification_report(
+            y_test, y_pred, output_dict=True
+        ),
     }
+
+    logger.info(
+        "\nMetrics at threshold %.4f:\n%s",
+        threshold,
+        classification_report(y_test, y_pred),
+    )
+
+    return metrics
 
 
 # Save trained artifacts
@@ -133,33 +175,74 @@ def save_artifacts(model, encoders: dict, metrics: dict) -> None:
 
     # Save training metadata
     metadata = {
-        "trained_at": datetime.now(timezone.utc).isoformat(),
-        "model_type": type(model).__name__,
-        "hyperparameters": XGBOOST_PARAMS,
+        "trained_at":         datetime.now(timezone.utc).isoformat(),
+        "model_type":         type(model).__name__,
+        "hyperparameters":    XGBOOST_PARAMS,
         "categorical_columns": CATEGORICAL_COLUMNS,
-        "metrics": metrics,
+        "metrics":            metrics,
     }
     with open(METADATA_PATH, "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2)
     logger.info("Metadata saved to %s", METADATA_PATH)
 
 
+# Log everything to MLflow
+def log_to_mlflow(model, metrics: dict) -> None:
+    # Log hyperparameters
+    mlflow.log_params(XGBOOST_PARAMS)
+    mlflow.log_param("threshold", metrics["threshold"])
+    mlflow.log_param("categorical_columns", len(CATEGORICAL_COLUMNS))
+
+    # Log metrics at configured threshold
+    mlflow.log_metric("accuracy",        metrics["accuracy"])
+    mlflow.log_metric("precision_churn", metrics["precision_churn"])
+    mlflow.log_metric("recall_churn",    metrics["recall_churn"])
+    mlflow.log_metric("f1_churn",        metrics["f1_churn"])
+
+    # Log metrics at default 0.5 threshold (for comparison in UI)
+    mlflow.log_metric("accuracy_default",    metrics["accuracy_default"])
+    mlflow.log_metric("precision_default",   metrics["precision_default"])
+    mlflow.log_metric("recall_default",      metrics["recall_default"])
+    mlflow.log_metric("f1_default",          metrics["f1_default"])
+
+    # Log model artifact
+    mlflow.sklearn.log_model(model, artifact_path="model")
+
+    # Log raw artifact files
+    mlflow.log_artifact(MODEL_PATH,    artifact_path="artifacts")
+    mlflow.log_artifact(ENCODER_PATH,  artifact_path="artifacts")
+    mlflow.log_artifact(METADATA_PATH, artifact_path="artifacts")
+
+    logger.info("Run logged to MLflow: %s", mlflow.active_run().info.run_id)
+
+
 # Main execution pipeline
 def main() -> None:
-    # Load and clean data
-    df = load_data(RAW_DATA_PATH)
+    mlflow.set_tracking_uri("sqlite:///mlflow.db")
+    # Set up MLflow experiment
+    mlflow.set_experiment(MLFLOW_EXPERIMENT)
 
-    # Preprocess features and target
-    features, target, encoders = preprocess(df)
+    # Start MLflow run for tracking
+    with mlflow.start_run():
+        logger.info("MLflow run started: %s", mlflow.active_run().info.run_id)
 
-    # Train the model
-    model, X_test, y_test = train(features, target)
+        # Load and clean data
+        df = load_data(RAW_DATA_PATH)
+        
+        # Preprocess features and target
+        features, target, encoders = preprocess(df)
+        
+        # Train the model
+        model, X_test, y_test = train(features, target)
+        
+        # Evaluate performance
+        metrics = evaluate(model, X_test, y_test)
 
-    # Evaluate performance
-    metrics = evaluate(model, X_test, y_test)
-
-    # Save all artifacts
-    save_artifacts(model, encoders, metrics)
+        # Save all artifacts
+        save_artifacts(model, encoders, metrics)
+        
+        # Log everything to MLflow
+        log_to_mlflow(model, metrics)
 
     logger.info("Pipeline complete.")
 

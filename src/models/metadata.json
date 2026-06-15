@@ -1,5 +1,5 @@
 {
-  "trained_at": "2026-06-14T21:19:49.624542+00:00",
+  "trained_at": "2026-06-15T01:00:36.181012+00:00",
   "model_type": "XGBClassifier",
   "hyperparameters": {
     "n_estimators": 200,
@@ -28,47 +28,41 @@
     "Payment Method"
   ],
   "metrics": {
-    "accuracy": 0.785,
+    "threshold": 0.37,
+    "accuracy": 0.7708,
+    "precision_churn": 0.5484,
+    "recall_churn": 0.7727,
+    "f1_churn": 0.6415,
+    "accuracy_default": 0.785,
+    "precision_default": 0.5816,
+    "recall_default": 0.6765,
+    "f1_default": 0.6255,
     "classification_report": {
       "0": {
-        "precision": 0.8757700205338809,
-        "recall": 0.8241545893719807,
-        "f1-score": 0.8491786958685913,
+        "precision": 0.9036281179138322,
+        "recall": 0.770048309178744,
+        "f1-score": 0.8315075639019301,
         "support": 1035.0
       },
       "1": {
-        "precision": 0.5816091954022988,
-        "recall": 0.6764705882352942,
-        "f1-score": 0.6254635352286774,
+        "precision": 0.5483870967741935,
+        "recall": 0.7727272727272727,
+        "f1-score": 0.6415094339622641,
         "support": 374.0
       },
-      "accuracy": 0.7849538679914834,
+      "accuracy": 0.7707594038325053,
       "macro avg": {
-        "precision": 0.7286896079680898,
-        "recall": 0.7503125888036375,
-        "f1-score": 0.7373211155486343,
+        "precision": 0.7260076073440129,
+        "recall": 0.7713877909530084,
+        "f1-score": 0.7365084989320971,
         "support": 1409.0
       },
       "weighted avg": {
-        "precision": 0.7976890066238654,
-        "recall": 0.7849538679914834,
-        "f1-score": 0.7897965311565063,
+        "precision": 0.8093341917916002,
+        "recall": 0.7707594038325053,
+        "f1-score": 0.7810751291273134,
         "support": 1409.0
       }
-    }
-  },
-  "threshold_analysis": {
-    "best_f1": {
-      "threshold": 0.3722,
-      "precision": 0.5494,
-      "recall": 0.7727,
-      "f1": 0.6422
-    },
-    "best_recall_80": {
-      "threshold": 0.2999,
-      "precision": 0.5245,
-      "recall": 0.8021,
-      "f1": 0.6342
     }
   }
 }

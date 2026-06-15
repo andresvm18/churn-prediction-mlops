@@ -16,6 +16,9 @@ seaborn==0.13.2
 imbalanced-learn==0.13.0
 openpyxl==3.1.5
 
+# Experiment tracking
+mlflow
+
 # Code quality
 black==25.1.0
 flake8==7.2.0
