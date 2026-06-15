@@ -24,11 +24,25 @@ app = FastAPI(
 
 # Expected CSV columns in order (for batch predictions)
 BATCH_COLUMNS = [
-    "gender", "senior_citizen", "partner", "dependents", "tenure_months",
-    "phone_service", "multiple_lines", "internet_service", "online_security",
-    "online_backup", "device_protection", "tech_support", "streaming_tv",
-    "streaming_movies", "contract", "paperless_billing", "payment_method",
-    "monthly_charges", "total_charges",
+    "gender",
+    "senior_citizen",
+    "partner",
+    "dependents",
+    "tenure_months",
+    "phone_service",
+    "multiple_lines",
+    "internet_service",
+    "online_security",
+    "online_backup",
+    "device_protection",
+    "tech_support",
+    "streaming_tv",
+    "streaming_movies",
+    "contract",
+    "paperless_billing",
+    "payment_method",
+    "monthly_charges",
+    "total_charges",
 ]
 
 
@@ -145,25 +159,29 @@ async def predict_batch(file: UploadFile = File(...)):
                 monthly_charges=float(row["monthly_charges"]),
                 total_charges=float(row["total_charges"]),
             )
-            
+
             # Get prediction for this customer
             prediction = predict_customer_churn(customer)
-            
+
             # Add successful result
-            results.append(BatchPredictionRow(
-                row_index=int(idx),
-                status="ok",
-                **prediction,
-            ))
+            results.append(
+                BatchPredictionRow(
+                    row_index=int(idx),
+                    status="ok",
+                    **prediction,
+                )
+            )
             successful += 1
 
         except Exception as exc:
             # Add failed result with error message
-            results.append(BatchPredictionRow(
-                row_index=int(idx),
-                status="error",
-                error=str(exc),
-            ))
+            results.append(
+                BatchPredictionRow(
+                    row_index=int(idx),
+                    status="error",
+                    error=str(exc),
+                )
+            )
             failed += 1
             logger.warning("Row %d failed: %s", idx, exc)
 
@@ -233,35 +251,41 @@ async def predict_batch_download(file: UploadFile = File(...)):
                 monthly_charges=float(row["monthly_charges"]),
                 total_charges=float(row["total_charges"]),
             )
-            
+
             # Get prediction for this customer
             result = predict_customer_churn(customer)
-            
+
             # Add original data plus prediction results
-            predictions.append({
-                **row.to_dict(),
-                "prediction":        result["prediction"],
-                "prediction_label":  result["prediction_label"],
-                "churn_probability": result["churn_probability"],
-                "risk_level":        result["risk_level"],
-                "recommendation":    result["recommendation"],
-                "top_factors":       " | ".join(result["top_factors"]),  # Join list as string
-                "status":            "ok",
-                "error":             "",
-            })
+            predictions.append(
+                {
+                    **row.to_dict(),
+                    "prediction": result["prediction"],
+                    "prediction_label": result["prediction_label"],
+                    "churn_probability": result["churn_probability"],
+                    "risk_level": result["risk_level"],
+                    "recommendation": result["recommendation"],
+                    "top_factors": " | ".join(
+                        result["top_factors"]
+                    ),  # Join list as string
+                    "status": "ok",
+                    "error": "",
+                }
+            )
         except Exception as exc:
             # Add failed row with error information
-            predictions.append({
-                **row.to_dict(),
-                "prediction":        "",
-                "prediction_label":  "",
-                "churn_probability": "",
-                "risk_level":        "",
-                "recommendation":    "",
-                "top_factors":       "",
-                "status":            "error",
-                "error":             str(exc),
-            })
+            predictions.append(
+                {
+                    **row.to_dict(),
+                    "prediction": "",
+                    "prediction_label": "",
+                    "churn_probability": "",
+                    "risk_level": "",
+                    "recommendation": "",
+                    "top_factors": "",
+                    "status": "error",
+                    "error": str(exc),
+                }
+            )
             logger.warning("Row %d failed: %s", idx, exc)
 
     # Convert results to CSV

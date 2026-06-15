@@ -40,7 +40,7 @@ def load_test_set() -> tuple[pd.DataFrame, pd.Series]:
 
     logger.info("Loading data from %s", RAW_DATA_PATH)
     df = pd.read_excel(RAW_DATA_PATH)
-    
+
     # Clean column names
     df.columns = df.columns.str.strip()
 
@@ -77,24 +77,30 @@ def evaluate_thresholds(
 ) -> pd.DataFrame:
     # Get probabilities for churn class (index 1)
     probabilities = model.predict_proba(X_test)[:, 1]
-    
+
     # Calculate precision-recall pairs for all thresholds
     precisions, recalls, thresholds = precision_recall_curve(y_test, probabilities)
 
     # precision_recall_curve returns n+1 values for precisions/recalls
     # and n values for thresholds — align them
     f1_scores = (
-        2 * precisions[:-1] * recalls[:-1]
-        / (precisions[:-1] + recalls[:-1] + 1e-8)  # Add small epsilon to avoid division by zero
+        2
+        * precisions[:-1]
+        * recalls[:-1]
+        / (
+            precisions[:-1] + recalls[:-1] + 1e-8
+        )  # Add small epsilon to avoid division by zero
     )
 
     # Create DataFrame with results for each threshold
-    results = pd.DataFrame({
-        "threshold": thresholds,
-        "precision": precisions[:-1],
-        "recall":    recalls[:-1],
-        "f1":        f1_scores,
-    })
+    results = pd.DataFrame(
+        {
+            "threshold": thresholds,
+            "precision": precisions[:-1],
+            "recall": recalls[:-1],
+            "f1": f1_scores,
+        }
+    )
 
     return results
 
@@ -114,16 +120,16 @@ def find_best_threshold(results: pd.DataFrame) -> dict:
 
     return {
         "best_f1": {
-            "threshold":  round(float(best_f1_row["threshold"]), 4),
-            "precision":  round(float(best_f1_row["precision"]), 4),
-            "recall":     round(float(best_f1_row["recall"]), 4),
-            "f1":         round(float(best_f1_row["f1"]), 4),
+            "threshold": round(float(best_f1_row["threshold"]), 4),
+            "precision": round(float(best_f1_row["precision"]), 4),
+            "recall": round(float(best_f1_row["recall"]), 4),
+            "f1": round(float(best_f1_row["f1"]), 4),
         },
         "best_recall_80": {
-            "threshold":  round(float(best_recall_row["threshold"]), 4),
-            "precision":  round(float(best_recall_row["precision"]), 4),
-            "recall":     round(float(best_recall_row["recall"]), 4),
-            "f1":         round(float(best_recall_row["f1"]), 4),
+            "threshold": round(float(best_recall_row["threshold"]), 4),
+            "precision": round(float(best_recall_row["precision"]), 4),
+            "recall": round(float(best_recall_row["recall"]), 4),
+            "f1": round(float(best_recall_row["f1"]), 4),
         },
     }
 
@@ -137,24 +143,30 @@ def plot_precision_recall_curve(results: pd.DataFrame, best: dict) -> None:
 
     # Left plot: Precision, Recall, and F1 vs Threshold
     ax = axes[0]
-    ax.plot(results["threshold"], results["precision"], label="Precision", color="#2980b9")
-    ax.plot(results["threshold"], results["recall"],    label="Recall",    color="#e74c3c")
-    ax.plot(results["threshold"], results["f1"],        label="F1",        color="#27ae60")
-    
+    ax.plot(
+        results["threshold"], results["precision"], label="Precision", color="#2980b9"
+    )
+    ax.plot(results["threshold"], results["recall"], label="Recall", color="#e74c3c")
+    ax.plot(results["threshold"], results["f1"], label="F1", color="#27ae60")
+
     # Mark best F1 threshold
     ax.axvline(
         best["best_f1"]["threshold"],
-        color="#27ae60", linestyle="--", alpha=0.7,
+        color="#27ae60",
+        linestyle="--",
+        alpha=0.7,
         label=f'Best F1 threshold = {best["best_f1"]["threshold"]}',
     )
-    
+
     # Mark threshold for 80% recall
     ax.axvline(
         best["best_recall_80"]["threshold"],
-        color="#e74c3c", linestyle="--", alpha=0.7,
+        color="#e74c3c",
+        linestyle="--",
+        alpha=0.7,
         label=f'Recall≥80% threshold = {best["best_recall_80"]["threshold"]}',
     )
-    
+
     ax.set_xlabel("Threshold")
     ax.set_ylabel("Score")
     ax.set_title("Precision / Recall / F1 vs Threshold")
@@ -164,23 +176,27 @@ def plot_precision_recall_curve(results: pd.DataFrame, best: dict) -> None:
     # Right plot: Precision-Recall curve
     ax2 = axes[1]
     ax2.plot(results["recall"], results["precision"], color="#8e44ad")
-    
+
     # Mark best F1 point
     ax2.scatter(
         best["best_f1"]["recall"],
         best["best_f1"]["precision"],
-        color="#27ae60", zorder=5, s=80,
+        color="#27ae60",
+        zorder=5,
+        s=80,
         label=f'Best F1 ({best["best_f1"]["threshold"]})',
     )
-    
+
     # Mark recall≥80% point
     ax2.scatter(
         best["best_recall_80"]["recall"],
         best["best_recall_80"]["precision"],
-        color="#e74c3c", zorder=5, s=80,
+        color="#e74c3c",
+        zorder=5,
+        s=80,
         label=f'Recall≥80% ({best["best_recall_80"]["threshold"]})',
     )
-    
+
     ax2.set_xlabel("Recall")
     ax2.set_ylabel("Precision")
     ax2.set_title("Precision-Recall Curve")
@@ -200,21 +216,28 @@ def print_comparison(model, X_test, y_test, best: dict) -> None:
     probabilities = model.predict_proba(X_test)[:, 1]
 
     # Generate predictions using different thresholds
-    default_preds  = (probabilities >= 0.5).astype(int)
-    best_f1_preds  = (probabilities >= best["best_f1"]["threshold"]).astype(int)
+    default_preds = (probabilities >= 0.5).astype(int)
+    best_f1_preds = (probabilities >= best["best_f1"]["threshold"]).astype(int)
     best_rec_preds = (probabilities >= best["best_recall_80"]["threshold"]).astype(int)
 
     # Print comparison reports
-    logger.info("\n%s\nDefault threshold (0.5):\n%s",
-                "=" * 50, classification_report(y_test, default_preds))
-    logger.info("\n%s\nBest F1 threshold (%s):\n%s",
-                "=" * 50,
-                best["best_f1"]["threshold"],
-                classification_report(y_test, best_f1_preds))
-    logger.info("\n%s\nBest Recall≥80%% threshold (%s):\n%s",
-                "=" * 50,
-                best["best_recall_80"]["threshold"],
-                classification_report(y_test, best_rec_preds))
+    logger.info(
+        "\n%s\nDefault threshold (0.5):\n%s",
+        "=" * 50,
+        classification_report(y_test, default_preds),
+    )
+    logger.info(
+        "\n%s\nBest F1 threshold (%s):\n%s",
+        "=" * 50,
+        best["best_f1"]["threshold"],
+        classification_report(y_test, best_f1_preds),
+    )
+    logger.info(
+        "\n%s\nBest Recall≥80%% threshold (%s):\n%s",
+        "=" * 50,
+        best["best_recall_80"]["threshold"],
+        classification_report(y_test, best_rec_preds),
+    )
 
 
 def save_results(best: dict) -> None:
@@ -240,35 +263,39 @@ def save_results(best: dict) -> None:
 def main() -> None:
     # Load trained model
     model = joblib.load(MODEL_PATH)
-    
+
     # Load test set
     X_test, y_test = load_test_set()
-    
+
     # Evaluate metrics across all thresholds
     results = evaluate_thresholds(model, X_test, y_test)
-    
+
     # Find optimal thresholds
     best = find_best_threshold(results)
 
     # Log results
-    logger.info("Best F1 threshold:       %s → precision=%.3f recall=%.3f f1=%.3f",
-                best["best_f1"]["threshold"],
-                best["best_f1"]["precision"],
-                best["best_f1"]["recall"],
-                best["best_f1"]["f1"])
+    logger.info(
+        "Best F1 threshold:       %s → precision=%.3f recall=%.3f f1=%.3f",
+        best["best_f1"]["threshold"],
+        best["best_f1"]["precision"],
+        best["best_f1"]["recall"],
+        best["best_f1"]["f1"],
+    )
 
-    logger.info("Best Recall≥80%% threshold: %s → precision=%.3f recall=%.3f f1=%.3f",
-                best["best_recall_80"]["threshold"],
-                best["best_recall_80"]["precision"],
-                best["best_recall_80"]["recall"],
-                best["best_recall_80"]["f1"])
+    logger.info(
+        "Best Recall≥80%% threshold: %s → precision=%.3f recall=%.3f f1=%.3f",
+        best["best_recall_80"]["threshold"],
+        best["best_recall_80"]["precision"],
+        best["best_recall_80"]["recall"],
+        best["best_recall_80"]["f1"],
+    )
 
     # Generate and save visualizations
     plot_precision_recall_curve(results, best)
-    
+
     # Print comparison reports
     print_comparison(model, X_test, y_test, best)
-    
+
     # Save results
     save_results(best)
 

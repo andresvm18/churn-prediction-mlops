@@ -51,7 +51,7 @@ MLFLOW_EXPERIMENT = "churn-prediction"
 def load_data(path: str) -> pd.DataFrame:
     logger.info("Loading data from %s", path)
     df = pd.read_excel(path)
-    
+
     # Strip whitespace from column names
     df.columns = df.columns.str.strip()
 
@@ -135,16 +135,16 @@ def evaluate(
     # Calculate metrics
     metrics = {
         # Configured threshold metrics
-        "threshold":           threshold,
-        "accuracy":            round(accuracy_score(y_test, y_pred), 4),
-        "precision_churn":     round(precision_score(y_test, y_pred), 4),
-        "recall_churn":        round(recall_score(y_test, y_pred), 4),
-        "f1_churn":            round(f1_score(y_test, y_pred), 4),
+        "threshold": threshold,
+        "accuracy": round(accuracy_score(y_test, y_pred), 4),
+        "precision_churn": round(precision_score(y_test, y_pred), 4),
+        "recall_churn": round(recall_score(y_test, y_pred), 4),
+        "f1_churn": round(f1_score(y_test, y_pred), 4),
         # Default threshold metrics (for comparison)
-        "accuracy_default":    round(accuracy_score(y_test, y_pred_default), 4),
-        "precision_default":   round(precision_score(y_test, y_pred_default), 4),
-        "recall_default":      round(recall_score(y_test, y_pred_default), 4),
-        "f1_default":          round(f1_score(y_test, y_pred_default), 4),
+        "accuracy_default": round(accuracy_score(y_test, y_pred_default), 4),
+        "precision_default": round(precision_score(y_test, y_pred_default), 4),
+        "recall_default": round(recall_score(y_test, y_pred_default), 4),
+        "f1_default": round(f1_score(y_test, y_pred_default), 4),
         # Full report as dict
         "classification_report": classification_report(
             y_test, y_pred, output_dict=True
@@ -175,11 +175,11 @@ def save_artifacts(model, encoders: dict, metrics: dict) -> None:
 
     # Save training metadata
     metadata = {
-        "trained_at":         datetime.now(timezone.utc).isoformat(),
-        "model_type":         type(model).__name__,
-        "hyperparameters":    XGBOOST_PARAMS,
+        "trained_at": datetime.now(timezone.utc).isoformat(),
+        "model_type": type(model).__name__,
+        "hyperparameters": XGBOOST_PARAMS,
         "categorical_columns": CATEGORICAL_COLUMNS,
-        "metrics":            metrics,
+        "metrics": metrics,
     }
     with open(METADATA_PATH, "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2)
@@ -194,23 +194,23 @@ def log_to_mlflow(model, metrics: dict) -> None:
     mlflow.log_param("categorical_columns", len(CATEGORICAL_COLUMNS))
 
     # Log metrics at configured threshold
-    mlflow.log_metric("accuracy",        metrics["accuracy"])
+    mlflow.log_metric("accuracy", metrics["accuracy"])
     mlflow.log_metric("precision_churn", metrics["precision_churn"])
-    mlflow.log_metric("recall_churn",    metrics["recall_churn"])
-    mlflow.log_metric("f1_churn",        metrics["f1_churn"])
+    mlflow.log_metric("recall_churn", metrics["recall_churn"])
+    mlflow.log_metric("f1_churn", metrics["f1_churn"])
 
     # Log metrics at default 0.5 threshold (for comparison in UI)
-    mlflow.log_metric("accuracy_default",    metrics["accuracy_default"])
-    mlflow.log_metric("precision_default",   metrics["precision_default"])
-    mlflow.log_metric("recall_default",      metrics["recall_default"])
-    mlflow.log_metric("f1_default",          metrics["f1_default"])
+    mlflow.log_metric("accuracy_default", metrics["accuracy_default"])
+    mlflow.log_metric("precision_default", metrics["precision_default"])
+    mlflow.log_metric("recall_default", metrics["recall_default"])
+    mlflow.log_metric("f1_default", metrics["f1_default"])
 
     # Log model artifact
     mlflow.sklearn.log_model(model, artifact_path="model")
 
     # Log raw artifact files
-    mlflow.log_artifact(MODEL_PATH,    artifact_path="artifacts")
-    mlflow.log_artifact(ENCODER_PATH,  artifact_path="artifacts")
+    mlflow.log_artifact(MODEL_PATH, artifact_path="artifacts")
+    mlflow.log_artifact(ENCODER_PATH, artifact_path="artifacts")
     mlflow.log_artifact(METADATA_PATH, artifact_path="artifacts")
 
     logger.info("Run logged to MLflow: %s", mlflow.active_run().info.run_id)
@@ -228,19 +228,19 @@ def main() -> None:
 
         # Load and clean data
         df = load_data(RAW_DATA_PATH)
-        
+
         # Preprocess features and target
         features, target, encoders = preprocess(df)
-        
+
         # Train the model
         model, X_test, y_test = train(features, target)
-        
+
         # Evaluate performance
         metrics = evaluate(model, X_test, y_test)
 
         # Save all artifacts
         save_artifacts(model, encoders, metrics)
-        
+
         # Log everything to MLflow
         log_to_mlflow(model, metrics)
 

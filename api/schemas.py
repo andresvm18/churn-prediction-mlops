@@ -79,6 +79,7 @@ class CustomerData(BaseModel):
         }
     }
 
+
 class BatchPredictionRow(BaseModel):
     # Single row result in a batch prediction response.
     row_index: int
