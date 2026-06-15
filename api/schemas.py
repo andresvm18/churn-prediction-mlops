@@ -78,3 +78,23 @@ class CustomerData(BaseModel):
             }
         }
     }
+
+class BatchPredictionRow(BaseModel):
+    # Single row result in a batch prediction response.
+    row_index: int
+    status: Literal["ok", "error"]
+    prediction: int | None = None
+    prediction_label: str | None = None
+    churn_probability: float | None = None
+    risk_level: str | None = None
+    recommendation: str | None = None
+    top_factors: list[str] = []
+    error: str | None = None
+
+
+class BatchPredictionResponse(BaseModel):
+    # Full response for a batch prediction request.
+    total_rows: int
+    successful: int
+    failed: int
+    results: list[BatchPredictionRow]
