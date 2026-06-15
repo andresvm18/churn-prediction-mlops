@@ -243,7 +243,7 @@ if uploaded_file is not None:
                         )
 
                 elif resp.status_code == 422:
-                    error_detail = resp.json().get('detail', 'Invalid file.')
+                    error_detail = resp.json().get("detail", "Invalid file.")
                     st.error(f"Validation error: {error_detail}")
                 elif resp.status_code == 503:
                     st.error("Prediction service unavailable. Is the model loaded?")
