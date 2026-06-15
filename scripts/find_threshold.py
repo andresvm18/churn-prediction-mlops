@@ -3,14 +3,14 @@ import logging
 import os
 import sys
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import joblib
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from sklearn.metrics import classification_report, precision_recall_curve
-
-# Allow imports from project root
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 
 # Import configuration constants
 from api.config import (
@@ -35,9 +35,6 @@ OUTPUT_DIR = "scripts/threshold_analysis"
 
 
 def load_test_set() -> tuple[pd.DataFrame, pd.Series]:
-    from sklearn.model_selection import train_test_split
-    from sklearn.preprocessing import LabelEncoder
-
     logger.info("Loading data from %s", RAW_DATA_PATH)
     df = pd.read_excel(RAW_DATA_PATH)
 

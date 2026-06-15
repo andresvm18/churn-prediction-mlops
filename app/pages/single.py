@@ -1,4 +1,3 @@
-import math
 import os
 from pathlib import Path
 
@@ -43,10 +42,12 @@ ICONS = {
     ),
     "shield": '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
     "clock": (
-        '<circle cx="12" cy="12" r="10"/>' '<polyline points="12 6 12 12 16 14"/>'
+        '<circle cx="12" cy="12" r="10"/>'
+        '<polyline points="12 6 12 12 16 14"/>'
     ),
     "dollar": (
-        '<line x1="12" y1="1" x2="12" y2="23"/>' '<line x1="17" y1="5" x2="7" y2="19"/>'
+        '<line x1="12" y1="1" x2="12" y2="23"/>'
+        '<line x1="17" y1="5" x2="7" y2="19"/>'
     ),
     "file": (
         '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
@@ -129,9 +130,11 @@ def gauge_svg(probability: float, risk_color: str) -> str:
     return f"""
 <svg width="{size}" height="{size}" viewBox="0 0 {size} {size}" xmlns="http://www.w3.org/2000/svg">
   <!-- Background arc -->
-  <path d="{bg_path}" fill="none" stroke="{stroke_bg}" stroke-width="{track_width}" stroke-linecap="round"/>
+  <path d="{bg_path}" fill="none" stroke="{stroke_bg}" stroke-width="{track_width}"
+        stroke-linecap="round"/>
   <!-- Filled arc showing probability -->
-  <path d="{fill_path}" fill="none" stroke="{risk_color}" stroke-width="{track_width}" stroke-linecap="round"/>
+  <path d="{fill_path}" fill="none" stroke="{risk_color}" stroke-width="{track_width}"
+        stroke-linecap="round"/>
   <!-- Dot marker -->
   <circle cx="{dot_x:.2f}" cy="{dot_y:.2f}" r="6" fill="{risk_color}"/>
   <!-- Percentage text -->
@@ -140,10 +143,13 @@ def gauge_svg(probability: float, risk_color: str) -> str:
     {probability:.0f}%
   </text>
   <text x="{cx}" y="{cy + 16}" text-anchor="middle"
-        font-family="DM Mono, monospace" font-size="8" fill="#9c968d" letter-spacing="1.5">CHURN PROB</text>
+        font-family="DM Mono, monospace" font-size="8" fill="#9c968d"
+        letter-spacing="1.5">CHURN PROB</text>
   <!-- Min/Max labels -->
-  <text x="18" y="112" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#9c968d">0%</text>
-  <text x="142" y="112" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#9c968d">100%</text>
+  <text x="18" y="112" text-anchor="middle" font-family="DM Mono, monospace"
+        font-size="8" fill="#9c968d">0%</text>
+  <text x="142" y="112" text-anchor="middle" font-family="DM Mono, monospace"
+        font-size="8" fill="#9c968d">100%</text>
 </svg>
 """
 
@@ -330,7 +336,9 @@ with left_col:
             # Auto-calculate total charges based on tenure
             total_charges = round(tenure_months * monthly_charges, 2)
             st.metric("Estimated Total Charges", f"${total_charges:,.2f}")
-            st.caption("Calculated automatically from tenure and monthly charges.")
+            st.caption(
+                "Calculated automatically from tenure and monthly charges."
+            )
 
     # Customer snapshot card
     st.html(
@@ -384,7 +392,8 @@ with right_col:
             st.metric(
                 "Churn Probability",
                 f"{probability:.1f}%",
-                help="Probability that the customer will cancel their subscription in the coming months",
+                help="Probability that the customer will cancel their subscription "
+                "in the coming months",
             )
         with m2:
             delta_val = probability - 26.0  # Compare to baseline (26% average churn)
@@ -426,7 +435,8 @@ with right_col:
             f'<div class="ci-empty-state">'
             f'<div class="ci-empty-icon">{ic("bar-chart", 22)}</div>'
             f'<p class="ci-empty-title">No prediction yet</p>'
-            f'<p class="ci-empty-sub">Fill in the customer details<br>and run the model to see results.</p>'
+            f'<p class="ci-empty-sub">Fill in the customer details<br>'
+            f'and run the model to see results.</p>'
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -485,10 +495,14 @@ if st.session_state.is_loading:
             st.session_state.has_prediction = True
             st.session_state.last_prediction = result
         elif resp.status_code == 422:
-            st.error(f"Validation error: {resp.json().get('detail', 'Invalid input.')}")
+            st.error(
+                f"Validation error: {resp.json().get('detail', 'Invalid input.')}"
+            )
             st.session_state.has_prediction = False
         elif resp.status_code == 503:
-            st.error("Prediction service unavailable. The model may not be loaded.")
+            st.error(
+                "Prediction service unavailable. The model may not be loaded."
+            )
             st.session_state.has_prediction = False
         else:
             st.error(f"Prediction failed — status {resp.status_code}")
@@ -510,5 +524,7 @@ if st.session_state.is_loading:
 
 # Footer
 st.html(
-    '<div class="ci-footer">Churn Intelligence · Powered by Machine Learning · v2.2</div>'
+    '<div class="ci-footer">'
+    "Churn Intelligence · Powered by Machine Learning · v2.2"
+    "</div>"
 )
