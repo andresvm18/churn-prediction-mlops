@@ -15,22 +15,22 @@
 ### API Docs: https://churn-api-mlbh.onrender.com/docs
 ![Swagger](images/swagger-api.png)
 
-
 A complete end-to-end Machine Learning project for predicting customer churn using the IBM Telco Customer Churn dataset.
 
 This project demonstrates the full lifecycle of a Machine Learning solution, including:
 - Data preprocessing
 - Exploratory Data Analysis (EDA)
 - Feature engineering
-- Model training
+- Model training with optimized classification threshold
 - Model explainability with SHAP
+- Experiment tracking with MLflow
 - FastAPI deployment
-- Streamlit dashboard
+- Streamlit multi-page dashboard
+- Batch prediction via CSV upload
 - Docker containerization
 - Automated testing with Pytest
 - Continuous Integration with GitHub Actions
 - Modular project architecture
-
 
 ## Project Overview
 
@@ -45,28 +45,38 @@ Using customer demographics, subscription information, account history, and serv
 - Missing value handling
 - Feature encoding with LabelEncoder
 - Feature selection (leakage-free)
-- Train/Test split
+- Train/Test split with stratification
 - SMOTE class balancing
 - XGBoost classification
-- Model evaluation with classification report
+- Optimized classification threshold via precision-recall analysis
+- Model evaluation with full classification report
 - Model persistence with Joblib
-- Training metadata saved to JSON (date, metrics, hyperparameters)
+- Training metadata saved to JSON (date, metrics, hyperparameters, threshold analysis)
+
+### Experiment Tracking with MLflow
+- Every training run logged automatically with MLflow
+- Parameters, metrics, and artifacts tracked per run
+- Side-by-side comparison between configured threshold and default 0.5
+- Local UI via `mlflow ui --backend-store-uri sqlite:///mlflow.db`
+- SQLite backend for persistence across sessions
+
+### Threshold Optimization
+- `scripts/find_threshold.py` evaluates precision, recall, and F1 across all thresholds
+- Generates precision-recall curve plot saved to `scripts/threshold_analysis/`
+- Threshold configurable in `api/config.py` — no code changes needed elsewhere
+- Current threshold: **0.37** (up from default 0.5), improving churn recall from 68% to **77%**
 
 ### Explainable AI (XAI)
-
-The project includes SHAP (SHapley Additive Explanations) for model interpretability.
-
-- Global feature importance
-- Local prediction explanations
-- Top 3 churn risk factors per customer, returned as `"Column: value"` strings
-- Business-friendly labels in the dashboard
+- Global feature importance via SHAP TreeExplainer
+- Local prediction explanations per customer
+- Top 3 churn risk factors returned as `"Column: value"` strings
+- Business-friendly labels rendered as badges in the dashboard
 
 ### FastAPI Backend
-
 REST API providing:
-
 - Strict input validation via Pydantic `Literal` types and `Field` constraints
-- Real-time predictions
+- Single customer prediction (`POST /predict`)
+- Batch prediction from CSV (`POST /predict/batch` and `POST /predict/batch/download`)
 - Churn probability estimation
 - Risk classification (Low / Medium / High)
 - Personalized recommendations
@@ -75,22 +85,27 @@ REST API providing:
 - Interactive Swagger documentation
 
 ### Streamlit Dashboard
+Multi-page interface with sidebar navigation:
 
-Modern customer-facing interface featuring:
-
-- Customer profile forms organized in tabs
+**Single Prediction page:**
+- Customer profile form organized in tabs (Personal, Services, Billing)
 - Circular gauge for churn probability
 - Risk factor badges with human-readable labels
 - Recommendation panel
 - Customer snapshot card
-- Responsive UI with professional styling
+- Real-time prediction via FastAPI
+
+**Batch Prediction page:**
+- CSV template download with sample data
+- File uploader with preview (first 5 rows)
+- Summary metrics: total customers, predicted churn rate, errors
+- Risk breakdown by level (High / Medium / Low)
+- Full results table with downloadable CSV output
+- Limit: 1 000 rows per batch
 
 ### Dockerized Deployment
-
-The application is fully containerized using Docker Compose.
-
 - FastAPI backend with `/health` healthcheck endpoint
-- Streamlit frontend waits for API to be healthy before starting (`condition: service_healthy`)
+- Streamlit frontend waits for API to be healthy (`condition: service_healthy`)
 - Automatic restart policy (`unless-stopped`)
 
 ## Tech Stack
@@ -102,9 +117,10 @@ The application is fully containerized using Docker Compose.
 | Model | XGBoost |
 | Class Balancing | imbalanced-learn (SMOTE) |
 | Explainability | SHAP |
+| Experiment Tracking | MLflow |
 | Data Processing | Pandas / NumPy |
 | API | FastAPI |
-| Dashboard | Streamlit |
+| Dashboard | Streamlit (multi-page) |
 | Containerization | Docker |
 | Orchestration | Docker Compose |
 | Serialization | Joblib |
@@ -123,12 +139,15 @@ customer-churn-prediction/
 ├── api/
 │   ├── __init__.py
 │   ├── config.py          # Single source of truth: paths, columns, thresholds
-│   ├── main.py            # FastAPI app and endpoint definitions
+│   ├── main.py            # FastAPI app, single and batch endpoints
 │   ├── model_service.py   # Prediction pipeline and SHAP logic
-│   └── schemas.py         # Pydantic request/response schemas
+│   └── schemas.py         # Pydantic schemas (single + batch)
 │
 ├── app/
-│   ├── streamlit_app.py
+│   ├── streamlit_app.py   # Navigation entry point
+│   ├── pages/
+│   │   ├── single.py      # Single prediction dashboard
+│   │   └── batch.py       # Batch prediction page
 │   └── styles.css
 │
 ├── data/
@@ -146,25 +165,28 @@ customer-churn-prediction/
 │   └── 02_model_explainability.ipynb
 │
 ├── scripts/
-│   └── train_model.py     # Structured training pipeline with metadata output
+│   ├── train_model.py         # Training pipeline with MLflow tracking
+│   └── find_threshold.py      # Precision-recall threshold analysis
 │
 ├── src/
 │   └── models/
 │       ├── churn_model.pkl
 │       ├── label_encoders.pkl
-│       └── metadata.json  # Training date, metrics, hyperparameters
+│       └── metadata.json      # Training date, metrics, threshold analysis
 │
 ├── tests/
-│   ├── test_api.py           # Endpoint tests including validation and error cases
-│   ├── test_model.py         # Business logic tests
-│   └── test_preprocessing.py # Encoding, risk level, and SHAP factor tests
+│   ├── test_api.py            # Endpoint tests: happy path, 422, 503, 500
+│   ├── test_model.py          # Business logic: risk level, recommendations
+│   └── test_preprocessing.py  # Encoding, unseen categories, SHAP format
 │
 ├── .dockerignore
+├── .env                       # LOKY_MAX_CPU_COUNT (not committed)
 ├── .flake8
 ├── .gitignore
 ├── docker-compose.yml
 ├── Dockerfile.api
 ├── Dockerfile.streamlit
+├── mlflow.db                  # MLflow SQLite backend (not committed)
 ├── pytest.ini
 ├── README.md
 ├── requirements-dev.txt
@@ -183,16 +205,18 @@ customer-churn-prediction/
 
 ## Model Performance
 
-Current production model: **XGBoost + SMOTE**
+Current production model: **XGBoost + SMOTE + optimized threshold (0.37)**
 
-| Metric | Class 0 (No Churn) | Class 1 (Churn) |
-|--------|-------------------|-----------------|
-| Precision | 0.88 | 0.58 |
-| Recall | 0.82 | 0.68 |
-| F1 Score | 0.85 | 0.63 |
-| **Accuracy** | | **78.5%** |
+| Metric | Default threshold (0.50) | Optimized threshold (0.37) |
+|--------|--------------------------|---------------------------|
+| Accuracy | 78.5% | 77.1% |
+| Precision (churn) | 0.58 | 0.55 |
+| Recall (churn) | 0.68 | **0.77** |
+| F1 (churn) | 0.63 | 0.64 |
 
-Business objective: maximize churn detection (recall on class 1) while maintaining acceptable precision. The dataset is naturally imbalanced (~27% churn), which is addressed with SMOTE during training.
+Business objective: maximize churn detection (recall on class 1). Lowering the threshold from 0.50 to 0.37 catches 9 more churners per 100 at the cost of a small precision drop — the right trade-off for a retention team.
+
+Run `python scripts/find_threshold.py` to re-evaluate thresholds on the current model and update `CLASSIFICATION_THRESHOLD` in `api/config.py`.
 
 ## API Endpoints
 
@@ -206,7 +230,7 @@ Response:
 }
 ~~~
 
-**Predict Churn**
+**Single Prediction**
 ~~~
 POST /predict
 
@@ -248,8 +272,43 @@ Example Response:
 }
 ~~~
 
-**Validation errors** return HTTP `422` with a description of the invalid field.
-**Service unavailable** (model not loaded) returns HTTP `503`.
+**Batch Prediction (JSON)**
+~~~
+POST /predict/batch
+Content-Type: multipart/form-data
+Body: file=<your_customers.csv>
+
+Response:
+{
+  "total_rows": 5,
+  "successful": 5,
+  "failed": 0,
+  "results": [
+    {
+      "row_index": 0,
+      "status": "ok",
+      "prediction": 1,
+      "prediction_label": "Churn",
+      "churn_probability": 0.9185,
+      "risk_level": "High",
+      "recommendation": "Customer is at high risk of churn...",
+      "top_factors": ["Monthly Charges: 95.5", "Contract: Month-to-month"]
+    }
+  ]
+}
+~~~
+
+**Batch Prediction (CSV download)**
+~~~
+POST /predict/batch/download
+Content-Type: multipart/form-data
+Body: file=<your_customers.csv>
+
+Returns: churn_predictions.csv with all original columns + prediction results
+~~~
+
+Limit: 1 000 rows per request.
+Validation errors return HTTP `422`. Service unavailable returns HTTP `503`.
 
 ## Running Locally
 
@@ -272,7 +331,7 @@ source venv/bin/activate
 
 **Install Dependencies**
 ~~~
-# Development (includes training, testing, and linting tools):
+# Development (includes training, testing, MLflow, and linting tools):
 pip install -r requirements-dev.txt
 
 # Production only:
@@ -284,10 +343,28 @@ pip install -r requirements-prod.txt
 python scripts/train_model.py
 ~~~
 
-This generates:
+Generates:
 - `src/models/churn_model.pkl`
 - `src/models/label_encoders.pkl`
 - `src/models/metadata.json`
+- MLflow run logged to `mlflow.db`
+
+**Analyze Threshold (optional)**
+~~~
+python scripts/find_threshold.py
+~~~
+
+Generates:
+- `scripts/threshold_analysis/threshold_results.json`
+- `scripts/threshold_analysis/threshold_analysis.png`
+- Updates `src/models/metadata.json` with threshold recommendations
+
+**View MLflow UI**
+~~~
+mlflow ui --backend-store-uri sqlite:///mlflow.db
+~~~
+
+Open: http://localhost:5000
 
 **Run FastAPI**
 ~~~
@@ -319,6 +396,7 @@ docker compose down
 The dashboard container waits for the API healthcheck to pass before starting.
 
 ## Docker Architecture
+
 ~~~
 ┌─────────────────────┐
 │     Streamlit       │
@@ -342,6 +420,7 @@ The dashboard container waits for the API healthcheck to pass before starting.
 ~~~
 
 ## MLOps Architecture
+
 ~~~
 Dataset
    │
@@ -355,14 +434,26 @@ Preprocessing + Encoding
  SMOTE
    │
    ▼
+Threshold Analysis
+(find_threshold.py)
+   │
+   ▼
 XGBoost Training
+(train_model.py)
+   │
+   ▼
+MLflow Run Logged
    │
    ▼
 Joblib Artifacts + metadata.json
    │
    ├── FastAPI (api/)
+   │     ├── POST /predict
+   │     └── POST /predict/batch
    │
    └── Streamlit (app/)
+         ├── Single Prediction
+         └── Batch Prediction
 ~~~
 
 ## CI/CD Pipeline
@@ -398,11 +489,11 @@ pytest
 
 ## Future Improvements
 
-- MLflow experiment tracking and model versioning
-- Automated retraining pipeline with data drift detection
+- Automated retraining pipeline triggered by data drift detection (Evidently AI)
+- A/B testing for model versions via MLflow model registry
 - Authentication and authorization (API key / JWT)
 - Cloud deployment monitoring and alerting
-- A/B testing for model versions
+- Structured JSON logging for production observability
 
 ## Author
 
