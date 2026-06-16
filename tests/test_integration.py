@@ -259,3 +259,156 @@ class TestBatchIntegration:
         assert "prediction_label" in result_df.columns
         assert "churn_probability" in result_df.columns
         assert "risk_level" in result_df.columns
+        
+# Database coverage
+
+class TestDatabaseCoverage:
+
+    @skip_if_no_model
+    def test_clear_history_deletes_records(self, high_risk_customer):
+        # Ensure at least one record exists in the database
+        client.post("/predict", json=high_risk_customer)
+
+        # Delete all history records
+        resp = client.delete("/history")
+        assert resp.status_code == 200
+        data = resp.json()
+        
+        # Verify response contains deletion count
+        assert "deleted" in data
+        assert isinstance(data["deleted"], int)
+
+    @skip_if_no_model
+    def test_history_empty_after_clear(self, high_risk_customer):
+        # Create a prediction record
+        client.post("/predict", json=high_risk_customer)
+        
+        # Clear all history
+        client.delete("/history")
+
+        # Verify history is now empty
+        resp = client.get("/history?limit=100")
+        assert resp.status_code == 200
+        assert resp.json() == []  # Should return empty list
+
+    @skip_if_no_model
+    def test_save_prediction_failure_is_silent(self, high_risk_customer):
+        from unittest.mock import patch
+        
+        # Mock database connection to raise an error
+        with patch("api.database.get_connection", side_effect=Exception("DB error")):
+            # Prediction should still succeed despite DB error
+            resp = client.post("/predict", json=high_risk_customer)
+        
+        # Verify prediction still returns successfully
+        assert resp.status_code == 200
+        assert "churn_probability" in resp.json()
+
+
+# Helper function to create a CSV with the specified number of rows.
+def _create_large_csv(num_rows: int = 1001) -> str:
+    header = (
+        "gender,senior_citizen,partner,dependents,tenure_months,"
+        "phone_service,multiple_lines,internet_service,online_security,"
+        "online_backup,device_protection,tech_support,streaming_tv,"
+        "streaming_movies,contract,paperless_billing,payment_method,"
+        "monthly_charges,total_charges\n"
+    )
+    row = (
+        "Female,0,Yes,No,12,Yes,No,Fiber optic,No,No,No,No,Yes,Yes,"
+        "Month-to-month,Yes,Electronic check,95.5,1146.0\n"
+    )
+    return header + row * num_rows
+    
+# Batch validation coverage
+class TestBatchValidationCoverage:
+
+    def test_batch_empty_csv_returns_400(self):
+        # An empty CSV file must return 400.
+        csv_content = (
+            "gender,senior_citizen,partner,dependents,tenure_months,"
+            "phone_service,multiple_lines,internet_service,online_security,"
+            "online_backup,device_protection,tech_support,streaming_tv,"
+            "streaming_movies,contract,paperless_billing,payment_method,"
+            "monthly_charges,total_charges\n"  # Headers only, no data rows
+        )
+        resp = client.post(
+            "/predict/batch",
+            files={"file": ("empty.csv", csv_content.encode(), "text/csv")},
+        )
+        assert resp.status_code == 400
+        assert "empty" in resp.json()["detail"].lower()
+
+    def test_batch_missing_columns_returns_422(self):
+        # A CSV missing required columns must return 422.
+        csv_content = "name,age\nJohn,30\n"  # Missing all required columns
+        resp = client.post(
+            "/predict/batch",
+            files={"file": ("bad.csv", csv_content.encode(), "text/csv")},
+        )
+        assert resp.status_code == 422
+        assert "missing" in resp.json()["detail"].lower()
+
+    def test_batch_non_csv_returns_400(self):
+        # A non-CSV file must return 400.
+        resp = client.post(
+            "/predict/batch",
+            files={"file": ("data.txt", b"some text", "text/plain")},
+        )
+        assert resp.status_code == 400
+
+    def test_batch_download_empty_csv_returns_400(self):
+        # Empty CSV to download endpoint must return 400.
+        csv_content = (
+            "gender,senior_citizen,partner,dependents,tenure_months,"
+            "phone_service,multiple_lines,internet_service,online_security,"
+            "online_backup,device_protection,tech_support,streaming_tv,"
+            "streaming_movies,contract,paperless_billing,payment_method,"
+            "monthly_charges,total_charges\n"  # Headers only
+        )
+        resp = client.post(
+            "/predict/batch/download",
+            files={"file": ("empty.csv", csv_content.encode(), "text/csv")},
+        )
+        assert resp.status_code == 400
+
+    def test_batch_download_missing_columns_returns_422(self):
+        # CSV missing columns to download endpoint must return 422.
+        csv_content = "name,age\nJohn,30\n"  # Missing all required columns
+        resp = client.post(
+            "/predict/batch/download",
+            files={"file": ("bad.csv", csv_content.encode(), "text/csv")},
+        )
+        assert resp.status_code == 422
+
+    def test_batch_download_non_csv_returns_400(self):
+        # Non-CSV file to download endpoint must return 400.
+        resp = client.post(
+            "/predict/batch/download",
+            files={"file": ("data.txt", b"some text", "text/plain")},
+        )
+        assert resp.status_code == 400
+
+
+    def test_batch_over_limit_returns_400(self):
+        # A CSV with more than 1000 rows must return 400.
+        csv_content = _create_large_csv(1001)  # 1 row over limit
+        
+        resp = client.post(
+            "/predict/batch",
+            files={"file": ("big.csv", csv_content.encode(), "text/csv")},
+        )
+        assert resp.status_code == 400
+        assert "1000" in resp.json()["detail"]
+
+
+    def test_batch_download_over_limit_returns_400(self):
+        # A CSV with more than 1000 rows to download endpoint must return 400."""
+        csv_content = _create_large_csv(1001)  # 1 row over limit
+        
+        resp = client.post(
+            "/predict/batch/download",
+            files={"file": ("big.csv", csv_content.encode(), "text/csv")},
+        )
+        assert resp.status_code == 400
+        assert "1000" in resp.json()["detail"]
