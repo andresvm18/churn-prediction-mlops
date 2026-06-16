@@ -4,7 +4,9 @@ import logging
 import pandas as pd
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
+from contextlib import asynccontextmanager
 
+from api.database import init_db, save_prediction
 from api.model_service import predict_customer_churn
 from api.schemas import BatchPredictionResponse, BatchPredictionRow, CustomerData
 
@@ -15,11 +17,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI app
+# Initialize FastAPI application
 app = FastAPI(
     title="Customer Churn Prediction API",
     description="Predicts the probability that a customer will churn based on their profile.",
-    version="2.2.0",
+    version="2.3.0",
 )
 
 # Expected columns for batch CSV uploads
@@ -32,8 +34,15 @@ BATCH_COLUMNS = [
 ]
 
 
-# Helpers
+# Startup 
+@asynccontextmanager
+async def lifespan(app):
+    init_db() # Creates tables if they don't exist
+    logger.info("API startup complete.")
+    yield
+    logger.info("API shutdown.")
 
+# Helpers 
 def _customer_from_row(row: pd.Series) -> CustomerData:
     return CustomerData(
         gender=str(row["gender"]),
@@ -66,10 +75,12 @@ def _validate_csv(df: pd.DataFrame) -> None:
             status_code=422,
             detail=f"CSV is missing required columns: {sorted(missing_cols)}",
         )
+    
     # Check if file is empty
     if len(df) == 0:
         raise HTTPException(status_code=400, detail="CSV file is empty.")
-    # Enforce row limit
+    
+    # Enforce row limit for performance
     if len(df) > 1000:
         raise HTTPException(
             status_code=400,
@@ -81,11 +92,13 @@ async def _read_csv(file: UploadFile) -> pd.DataFrame:
     # Validate file type
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are supported.")
+    
     try:
         # Read and decode file contents
         contents = await file.read()
         df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
-        # Normalize column names to lowercase
+        
+        # Normalize column names to lowercase for consistency
         df.columns = df.columns.str.lower().str.strip()
         return df
     except HTTPException:
@@ -94,7 +107,7 @@ async def _read_csv(file: UploadFile) -> pd.DataFrame:
         raise HTTPException(status_code=400, detail=f"Could not parse CSV file: {exc}")
 
 
-# Endpoints 
+# ── Endpoints ──────────────────────────────────────────────────────────────────
 
 @app.get("/")
 def root():
@@ -103,14 +116,19 @@ def root():
 
 @app.get("/health")
 def health():
-    """Health check endpoint."""
     return {"status": "healthy"}
 
 
 @app.post("/predict")
 def predict_churn(customer_data: CustomerData):
     try:
-        return predict_customer_churn(customer_data)
+        # Get prediction from model
+        result = predict_customer_churn(customer_data)
+        
+        # Save to database for history tracking
+        save_prediction(customer_data, result)
+        return result
+
     except RuntimeError as exc:
         # Model files not found or not loaded
         logger.error("Model unavailable: %s", exc)
@@ -134,6 +152,30 @@ def predict_churn(customer_data: CustomerData):
         )
 
 
+@app.get("/history")
+def get_history(
+    limit: int = 100,
+    risk_level: str | None = None,
+    prediction: int | None = None,
+):
+    from api.database import get_predictions
+    return get_predictions(limit=limit, risk_level=risk_level, prediction=prediction)
+
+
+@app.get("/history/stats")
+def get_history_stats():
+    from api.database import get_summary_stats
+    return get_summary_stats()
+
+
+@app.delete("/history")
+def clear_history_endpoint():
+    """Delete all prediction history."""
+    from api.database import clear_history
+    deleted = clear_history()
+    return {"deleted": deleted}
+
+
 @app.post("/predict/batch", response_model=BatchPredictionResponse)
 async def predict_batch(file: UploadFile = File(...)):
     # Read and validate CSV
@@ -148,6 +190,7 @@ async def predict_batch(file: UploadFile = File(...)):
             # Convert row to CustomerData and predict
             customer = _customer_from_row(row)
             prediction = predict_customer_churn(customer)
+            
             # Add successful prediction to results
             results.append(
                 BatchPredictionRow(row_index=int(idx), status="ok", **prediction)
@@ -177,13 +220,14 @@ async def predict_batch_download(file: UploadFile = File(...)):
     _validate_csv(df)
 
     predictions = []
-
+    
     # Process each row
     for idx, row in df.iterrows():
         try:
             # Convert row to CustomerData and predict
             customer = _customer_from_row(row)
             result = predict_customer_churn(customer)
+            
             # Add original data plus predictions
             predictions.append({
                 **row.to_dict(),
@@ -197,21 +241,22 @@ async def predict_batch_download(file: UploadFile = File(...)):
                 "error":             "",
             })
         except Exception as exc:
-            # Log failed predictions and add empty values
+            # Add failed prediction with error details
             predictions.append({
                 **row.to_dict(),
                 "prediction": "", "prediction_label": "", "churn_probability": "",
-                "risk_level": "", "recommendation": "", "top_factors": "",
+                "risk_level": "", "recommendation":   "", "top_factors": "",
                 "status": "error", "error": str(exc),
             })
             logger.warning("Row %d failed: %s", idx, exc)
 
-    # Convert to CSV and return as downloadable file
+    # Convert to DataFrame and CSV
     result_df = pd.DataFrame(predictions)
     csv_buffer = io.StringIO()
     result_df.to_csv(csv_buffer, index=False)
     csv_buffer.seek(0)
 
+    # Return as downloadable file
     return StreamingResponse(
         io.BytesIO(csv_buffer.getvalue().encode("utf-8")),
         media_type="text/csv",
