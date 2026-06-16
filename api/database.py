@@ -12,13 +12,13 @@ DB_PATH = os.getenv("DB_PATH", "predictions.db")
 
 def get_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row  # Allows accessing columns by name
+    conn.row_factory = sqlite3.Row
     return conn
 
 
 def init_db() -> None:
-    # Create the predictions table if it does not exist.
     with get_connection() as conn:
+        # Create table with all prediction fields
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS predictions (
@@ -42,12 +42,14 @@ def init_db() -> None:
             )
             """
         )
-
-        # Auto-migrate, add any missing columns without dropping existing data
+        
+        # Check for missing columns and add them (schema migration)
         existing_cols = {
             row[1]
             for row in conn.execute("PRAGMA table_info(predictions)").fetchall()
         }
+        
+        # Required columns with their SQLite types
         required_cols = {
             "gender": "TEXT", "senior_citizen": "INTEGER",
             "partner": "TEXT", "dependents": "TEXT",
@@ -58,11 +60,15 @@ def init_db() -> None:
             "risk_level": "TEXT", "recommendation": "TEXT",
             "top_factors": "TEXT",
         }
+        
+        # Add any missing columns
         for col, col_type in required_cols.items():
             if col not in existing_cols:
-                conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} {col_type}")
+                conn.execute(
+                    f"ALTER TABLE predictions ADD COLUMN {col} {col_type}"
+                )
                 logger.info("Added missing column '%s' to predictions table", col)
-
+        
         conn.commit()
     logger.info("Database initialized at %s", DB_PATH)
 
@@ -106,6 +112,7 @@ def save_prediction(customer_data, result: dict) -> None:
             )
             conn.commit()
     except Exception as exc:
+        # Log error but don't raise because prediction should succeed even if DB fails
         logger.error("Failed to save prediction: %s", exc)
 
 
@@ -191,7 +198,6 @@ def get_summary_stats() -> dict:
 
 
 def clear_history() -> int:
-    # Delete all predictions from the database.
     with get_connection() as conn:
         cursor = conn.execute("DELETE FROM predictions")
         conn.commit()

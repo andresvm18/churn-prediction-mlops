@@ -1,10 +1,13 @@
 import os
-
+import tempfile
 import pytest
 from fastapi.testclient import TestClient
 from api.database import init_db
 
 from api.main import app
+
+TEST_DB = tempfile.mktemp(suffix=".db")
+os.environ["DB_PATH"] = TEST_DB
 
 # Initialize test client
 client = TestClient(app)
@@ -24,8 +27,11 @@ skip_if_no_model = pytest.mark.skipif(
 # Fixtures
 @pytest.fixture(autouse=True, scope="session")
 def setup_database():
+    from api.database import init_db
     init_db()
     yield
+    if os.path.exists(TEST_DB):
+        os.remove(TEST_DB)
     
     
 @pytest.fixture

@@ -1,4 +1,5 @@
 import os
+from api.config import BASELINE_CHURN_RATE
 from pathlib import Path
 
 import requests
@@ -393,7 +394,7 @@ with right_col:
                 "in the coming months",
             )
         with m2:
-            delta_val = probability - 26.0  # Compare to baseline (26% average churn)
+            delta_val = probability - BASELINE_CHURN_RATE
             st.metric(
                 "vs. Baseline",
                 f"{probability:.1f}%",
