@@ -180,7 +180,10 @@ class TestHistoryIntegration:
         client.post("/predict", json=high_risk_customer)
         resp = client.get("/history?limit=1")
         assert resp.status_code == 200
-        assert len(resp.json()) >= 1  # At least one record saved
+        data = resp.json()
+        assert "rows" in data
+        assert "total" in data
+        assert len(data["rows"]) >= 1
 
     @skip_if_no_model
     def test_history_stats_returns_correct_structure(self, high_risk_customer):
@@ -188,11 +191,8 @@ class TestHistoryIntegration:
         resp = client.get("/history/stats")
         assert resp.status_code == 200
         data = resp.json()
-        expected_keys = [
-            "total", "churn_count", "churn_rate", "avg_probability",
-            "high_risk", "medium_risk", "low_risk"
-        ]
-        for key in expected_keys:
+        for key in ["total", "churn_count", "churn_rate", "avg_probability",
+                    "high_risk", "medium_risk", "low_risk"]:
             assert key in data, f"Missing stats key: {key}"
 
     @skip_if_no_model
@@ -200,16 +200,31 @@ class TestHistoryIntegration:
         client.post("/predict", json=high_risk_customer)
         resp = client.get("/history?risk_level=High&limit=50")
         assert resp.status_code == 200
-        for row in resp.json():
-            assert row["risk_level"] == "High"  # All rows should be High risk
+        for row in resp.json()["rows"]:
+            assert row["risk_level"] == "High"
 
     @skip_if_no_model
     def test_history_prediction_filter_works(self, low_risk_customer):
         client.post("/predict", json=low_risk_customer)
         resp = client.get("/history?prediction=0&limit=50")
         assert resp.status_code == 200
-        for row in resp.json():
-            assert row["prediction"] == 0  # All rows should be No Churn
+        for row in resp.json()["rows"]:
+            assert row["prediction"] == 0
+
+    @skip_if_no_model
+    def test_history_pagination_offset_works(self, high_risk_customer):
+        for _ in range(3):
+            client.post("/predict", json=high_risk_customer)
+        resp_page1 = client.get("/history?limit=2&offset=0")
+        resp_page2 = client.get("/history?limit=2&offset=2")
+        assert resp_page1.status_code == 200
+        assert resp_page2.status_code == 200
+        data1 = resp_page1.json()
+        data2 = resp_page2.json()
+        assert "total" in data1
+        assert data1["total"] >= 3
+        if data2["rows"]:
+            assert data1["rows"][0]["id"] != data2["rows"][0]["id"]
 
 
 # Batch integration
@@ -309,6 +324,21 @@ class TestDatabaseCoverage:
         # Verify prediction still returns successfully
         assert resp.status_code == 200
         assert "churn_probability" in resp.json()
+    
+    @skip_if_no_model
+    def test_prediction_is_saved_to_history(self, high_risk_customer):
+        client.post("/predict", json=high_risk_customer)
+        resp = client.get("/history?limit=1")
+        assert resp.status_code == 200
+        assert len(resp.json()["rows"]) >= 1
+
+    @skip_if_no_model
+    def test_history_empty_after_clear(self, high_risk_customer):
+        client.post("/predict", json=high_risk_customer)
+        client.delete("/history")
+        resp = client.get("/history?limit=100")
+        assert resp.status_code == 200
+        assert resp.json()["rows"] == []
 
 
 # Helper function to create a CSV with the specified number of rows.

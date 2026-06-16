@@ -7,16 +7,13 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-# API endpoint for the FastAPI backend
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
-# Load custom CSS styles
 css_path = Path(__file__).parent.parent / "styles.css"
 if css_path.exists():
     with open(css_path, "r", encoding="utf-8") as f:
         st.html(f"<style>{f.read()}</style>")
 
-# Header
 st.html("""
 <div class="ci-header-wrap">
     <div class="ci-logo-mark">
@@ -36,8 +33,6 @@ st.html("""
 """)
 
 
-# API Helpers
-
 def fetch_stats() -> dict:
     try:
         resp = requests.get(f"{API_URL}/history/stats", timeout=5)
@@ -46,33 +41,41 @@ def fetch_stats() -> dict:
         return {}
 
 
-def fetch_history(limit: int, risk_level: str, pred_filter: str) -> list[dict]:
-    params = {"limit": limit}
+def fetch_history(
+    limit: int,
+    offset: int,
+    risk_level: str,
+    pred_filter: str,
+) -> tuple[list[dict], int]:
+    params = {"limit": limit, "offset": offset}
     if risk_level != "All":
         params["risk_level"] = risk_level
     if pred_filter == "Churn":
         params["prediction"] = 1
     elif pred_filter == "No Churn":
         params["prediction"] = 0
-    
     try:
         resp = requests.get(f"{API_URL}/history", params=params, timeout=5)
-        return resp.json() if resp.status_code == 200 else []
+        if resp.status_code == 200:
+            data = resp.json()
+            return data["rows"], data["total"]
+        return [], 0
     except Exception:
-        return []
+        return [], 0
 
 
 def fetch_all_for_charts() -> list[dict]:
     try:
         resp = requests.get(f"{API_URL}/history?limit=1000", timeout=5)
-        return resp.json() if resp.status_code == 200 else []
+        if resp.status_code == 200:
+            data = resp.json()
+            return data.get("rows", []) if isinstance(data, dict) else data
+        return []
     except Exception:
         return []
 
 
-# Table Builder
 def build_table(rows: list[dict]) -> str:
-    
     def pred_badge(label: str) -> str:
         if label == "Churn":
             return (
@@ -99,7 +102,6 @@ def build_table(rows: list[dict]) -> str:
         )
 
     def fmt_factors(raw: str) -> str:
-        """Parse JSON top_factors and join with dots."""
         try:
             factors = json.loads(raw) if raw else []
             return " · ".join(factors)
@@ -112,15 +114,12 @@ def build_table(rows: list[dict]) -> str:
         except Exception:
             return raw
 
-    # Table header styles
     th = (
         "padding:0.6rem 0.85rem;text-align:left;font-size:0.68rem;"
         "font-family:'DM Mono',monospace;text-transform:uppercase;"
         "letter-spacing:0.08em;color:#9c968d;font-weight:500;"
         "white-space:nowrap;border-bottom:2px solid #e2ddd6;background:#f8f6f2;"
     )
-    
-    # Table cell styles
     td = (
         "padding:0.6rem 0.85rem;color:#1a1714;font-size:0.82rem;"
         "border-bottom:1px solid #f0ece5;vertical-align:middle;"
@@ -131,14 +130,12 @@ def build_table(rows: list[dict]) -> str:
         "max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
     )
 
-    # Build header row
     headers = [
         "Date", "Gender", "Tenure", "Contract", "Internet",
         "Monthly $", "Prediction", "Probability", "Risk", "Top Factors",
     ]
     header_html = "".join(f'<th style="{th}">{h}</th>' for h in headers)
 
-    # Build data rows
     rows_html = ""
     for i, row in enumerate(rows):
         bg = "#ffffff" if i % 2 == 0 else "#fafaf9"
@@ -160,7 +157,6 @@ def build_table(rows: list[dict]) -> str:
             f"</tr>"
         )
 
-    # Return complete table with container
     return (
         '<div style="overflow-x:auto;border:1px solid #e2ddd6;border-radius:12px;'
         'overflow:hidden;background:white;margin-bottom:0.5rem;">'
@@ -171,7 +167,6 @@ def build_table(rows: list[dict]) -> str:
     )
 
 
-# Chart Layout
 CHART_LAYOUT = dict(
     paper_bgcolor="white",
     plot_bgcolor="white",
@@ -182,11 +177,8 @@ CHART_LAYOUT = dict(
     yaxis=dict(gridcolor="#e2ddd6", linecolor="#e2ddd6", tickfont=dict(color="#5c574f")),
 )
 
-
-# Summary Stats
 stats = fetch_stats()
 
-# Show empty state if no predictions exist
 if not stats or stats.get("total", 0) == 0:
     st.html("""
     <div class="ci-empty-state">
@@ -206,7 +198,6 @@ if not stats or stats.get("total", 0) == 0:
     """)
     st.stop()
 
-# Display summary metrics
 st.html('<div class="ci-section">📊 Summary</div>')
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Total predictions", stats["total"])
@@ -215,7 +206,6 @@ c3.metric("Avg probability",   f"{stats['avg_probability']}%")
 c4.metric("High risk",         stats["high_risk"])
 st.html('<hr class="ci-divider-light">')
 
-# Risk Breakdown
 st.html('<div class="ci-section">🎯 Risk breakdown</div>')
 rb1, rb2, rb3 = st.columns(3)
 rb1.metric("🔴 High risk",   stats["high_risk"])
@@ -223,7 +213,6 @@ rb2.metric("🟡 Medium risk", stats["medium_risk"])
 rb3.metric("🟢 Low risk",    stats["low_risk"])
 st.html('<hr class="ci-divider-light">')
 
-# Analytics Charts
 st.html('<div class="ci-section">📈 Analytics</div>')
 chart_data = fetch_all_for_charts()
 
@@ -236,12 +225,9 @@ if chart_data:
 
     col_left, col_right = st.columns(2)
 
-    # Left: Temporal evolution
     with col_left:
         st.markdown("**Churn rate over time**")
         st.caption("Daily average churn probability of analyzed customers.")
-
-        # Resample data by day
         temporal = (
             chart_df.set_index("created_at")
             .resample("D")["churn_probability"]
@@ -252,7 +238,6 @@ if chart_data:
         temporal["avg_probability"] = (temporal["avg_probability"] * 100).round(1)
         temporal = temporal[temporal["count"] > 0]
 
-        # Show chart or fallback based on data availability
         if len(temporal) >= 2:
             fig = go.Figure()
             fig.add_trace(go.Scatter(
@@ -270,7 +255,6 @@ if chart_data:
             )
             st.plotly_chart(fig, use_container_width=True)
         elif len(temporal) == 1:
-            # Only one day of data
             st.metric(
                 "Today's avg probability",
                 f"{temporal['avg_probability'].iloc[0]:.1f}%",
@@ -279,12 +263,9 @@ if chart_data:
         else:
             st.info("Not enough data to render the chart yet.")
 
-    # Right: Probability distribution
     with col_right:
         st.markdown("**Probability distribution**")
         st.caption("How predictions are distributed across risk ranges.")
-
-        # Create probability buckets
         bins = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.01]
         labels = [
             "0-10%", "10-20%", "20-30%", "30-40%", "40-50%",
@@ -293,8 +274,6 @@ if chart_data:
         chart_df["bucket"] = pd.cut(
             chart_df["churn_probability"], bins=bins, labels=labels, right=False
         )
-        
-        # Count records per bucket
         dist = (
             chart_df["bucket"]
             .value_counts()
@@ -302,13 +281,10 @@ if chart_data:
             .reset_index()
         )
         dist.columns = ["range", "count"]
-        
-        # Color bars: green (low), yellow (medium), red (high)
         bar_colors = [
             "#1e8449" if i < 4 else "#d68910" if i < 7 else "#c0392b"
             for i in range(len(dist))
         ]
-        
         fig2 = go.Figure()
         fig2.add_trace(go.Bar(
             x=dist["range"],
@@ -328,34 +304,87 @@ st.html('<hr class="ci-divider-light">')
 
 # Filters
 st.html('<div class="ci-section">🔍 Filter & export</div>')
-f1, f2, f3 = st.columns(3)
+f1, f2 = st.columns(2)
 with f1:
     risk_filter = st.selectbox("Risk level", ["All", "High", "Medium", "Low"])
 with f2:
     pred_filter = st.selectbox("Prediction", ["All", "Churn", "No Churn"])
-with f3:
-    limit = st.selectbox("Show last", [25, 50, 100, 200], index=1)
 
-# History Table
-rows = fetch_history(limit, risk_filter, pred_filter)
+PAGE_SIZE = 25
 
-if not rows:
+if "history_page" not in st.session_state:
+    st.session_state["history_page"] = 0
+
+if (
+    st.session_state.get("last_risk_filter") != risk_filter
+    or st.session_state.get("last_pred_filter") != pred_filter
+):
+    st.session_state["history_page"] = 0
+    st.session_state["last_risk_filter"] = risk_filter
+    st.session_state["last_pred_filter"] = pred_filter
+
+current_page = st.session_state["history_page"]
+offset = current_page * PAGE_SIZE
+
+rows, total = fetch_history(PAGE_SIZE, offset, risk_filter, pred_filter)
+
+if not rows and total == 0:
     st.info("No predictions match the selected filters.")
     st.stop()
 
-# Render custom HTML table
+total_pages = max(1, -(-total // PAGE_SIZE))
+
+st.caption(
+    f"Showing {offset + 1}–{min(offset + PAGE_SIZE, total)} of {total} predictions"
+    f" · Page {current_page + 1} of {total_pages}"
+)
+
 st.html(build_table(rows))
 st.html('<hr class="ci-divider-light">')
 
-# Export & Clear
+# Pagination controls
+nav1, nav2, _, nav3 = st.columns([1, 1, 3, 1])
+
+with nav1:
+    if st.button(
+        "← Previous",
+        use_container_width=True,
+        key="prev_page",
+        disabled=current_page == 0,
+    ):
+        st.session_state["history_page"] -= 1
+        st.rerun()
+
+with nav2:
+    if st.button(
+        "Next →",
+        use_container_width=True,
+        key="next_page",
+        disabled=current_page >= total_pages - 1,
+    ):
+        st.session_state["history_page"] += 1
+        st.rerun()
+
+with nav3:
+    if st.button(
+        "⤒ First",
+        use_container_width=True,
+        key="first_page",
+        disabled=current_page == 0,
+    ):
+        st.session_state["history_page"] = 0
+        st.rerun()
+
+st.html('<hr class="ci-divider-light">')
+
+# Export & clear
 df = pd.DataFrame(rows)
 btn_col1, btn_col2, _ = st.columns([1, 1, 2])
 
 with btn_col1:
-    # Export to CSV
     csv_data = df.to_csv(index=False).encode("utf-8")
     st.download_button(
-        label="⬇ Export CSV",
+        label="⬇ Export page",
         data=csv_data,
         file_name="prediction_history.csv",
         mime="text/csv",
@@ -365,7 +394,6 @@ with btn_col1:
     )
 
 with btn_col2:
-    # Clear history button
     if st.button(
         "🗑 Clear history",
         use_container_width=True,
@@ -373,7 +401,6 @@ with btn_col2:
     ):
         st.session_state["confirm_clear"] = True
 
-# Confirmation dialog for clearing history
 if st.session_state.get("confirm_clear"):
     st.warning("Are you sure? This will delete all prediction history permanently.")
     confirm_col1, confirm_col2, _ = st.columns([1, 1, 3])
@@ -389,6 +416,7 @@ if st.session_state.get("confirm_clear"):
                 if resp.status_code == 200:
                     st.success(f"Deleted {resp.json()['deleted']} predictions.")
                     st.session_state["confirm_clear"] = False
+                    st.session_state["history_page"] = 0
                     st.rerun()
             except Exception as e:
                 st.error(f"Error: {e}")
@@ -401,7 +429,6 @@ if st.session_state.get("confirm_clear"):
             st.session_state["confirm_clear"] = False
             st.rerun()
 
-# Footer
 st.html(
     '<div class="ci-footer">'
     "Churn Intelligence · Powered by Machine Learning · v2.3"

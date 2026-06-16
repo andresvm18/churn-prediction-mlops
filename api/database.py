@@ -117,16 +117,15 @@ def save_prediction(customer_data, result: dict) -> None:
 
 
 def get_predictions(
-    limit: int = 100,
+    limit: int = 25,
+    offset: int = 0,
     risk_level: str | None = None,
     prediction: int | None = None,
 ) -> list[dict]:
-    # Build query dynamically based on filters
     query = "SELECT * FROM predictions"
     params = []
     filters = []
 
-    # Apply filters if provided
     if risk_level:
         filters.append("risk_level = ?")
         params.append(risk_level)
@@ -134,22 +133,41 @@ def get_predictions(
         filters.append("prediction = ?")
         params.append(prediction)
 
-    # Add WHERE clause if filters exist
     if filters:
         query += " WHERE " + " AND ".join(filters)
 
-    # Order by newest first and limit results
-    query += " ORDER BY created_at DESC LIMIT ?"
+    query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
     params.append(limit)
+    params.append(offset)
 
-    # Execute query and fetch results
     with get_connection() as conn:
         rows = conn.execute(query, params).fetchall()
 
-    # Convert rows to dictionaries
     return [dict(row) for row in rows]
 
 
+def count_predictions(
+    risk_level: str | None = None,
+    prediction: int | None = None,
+) -> int:
+    query = "SELECT COUNT(*) FROM predictions"
+    params = []
+    filters = []
+
+    if risk_level:
+        filters.append("risk_level = ?")
+        params.append(risk_level)
+    if prediction is not None:
+        filters.append("prediction = ?")
+        params.append(prediction)
+
+    if filters:
+        query += " WHERE " + " AND ".join(filters)
+
+    with get_connection() as conn:
+        return conn.execute(query, params).fetchone()[0]
+    
+    
 def get_summary_stats() -> dict:
     with get_connection() as conn:
         # Get total number of predictions

@@ -154,11 +154,19 @@ def predict_churn(customer_data: CustomerData):
 @app.get("/history")
 def get_history(
     limit: int = 100,
+    offset: int = 0,
     risk_level: str | None = None,
     prediction: int | None = None,
 ):
-    from api.database import get_predictions
-    return get_predictions(limit=limit, risk_level=risk_level, prediction=prediction)
+    from api.database import get_predictions, count_predictions
+    rows = get_predictions(
+        limit=limit,
+        offset=offset,
+        risk_level=risk_level,
+        prediction=prediction,
+    )
+    total = count_predictions(risk_level=risk_level, prediction=prediction)
+    return {"rows": rows, "total": total, "limit": limit, "offset": offset}
 
 
 @app.get("/history/stats")
