@@ -108,7 +108,6 @@ async def _read_csv(file: UploadFile) -> pd.DataFrame:
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
-
 @app.get("/")
 def root():
     return {"message": "Customer Churn Prediction API is running"}
@@ -170,7 +169,6 @@ def get_history_stats():
 
 @app.delete("/history")
 def clear_history_endpoint():
-    """Delete all prediction history."""
     from api.database import clear_history
     deleted = clear_history()
     return {"deleted": deleted}
@@ -190,7 +188,7 @@ async def predict_batch(file: UploadFile = File(...)):
             # Convert row to CustomerData and predict
             customer = _customer_from_row(row)
             prediction = predict_customer_churn(customer)
-            
+            save_prediction(customer, prediction)
             # Add successful prediction to results
             results.append(
                 BatchPredictionRow(row_index=int(idx), status="ok", **prediction)
@@ -227,7 +225,7 @@ async def predict_batch_download(file: UploadFile = File(...)):
             # Convert row to CustomerData and predict
             customer = _customer_from_row(row)
             result = predict_customer_churn(customer)
-            
+            save_prediction(customer, result)
             # Add original data plus predictions
             predictions.append({
                 **row.to_dict(),
