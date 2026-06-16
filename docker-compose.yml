@@ -1,31 +1,40 @@
 services:
-  # FastAPI backend service for churn predictions
+  # API Service 
   api:
     build:
-      context: .                    # Build from current directory
-      dockerfile: Dockerfile.api    # Use this Dockerfile for API
-    container_name: churn-api       # Container name for easy reference
+      context: .                           # Build context - current directory
+      dockerfile: Dockerfile.api           # Dockerfile for the API service
+    container_name: churn-api              # Container name for easy reference
     ports:
-      - "8000:8000"                 # Map host port 8000 to container port 8000
-    restart: unless-stopped         # Auto-restart unless manually stopped
+      - "8000:8000"                        # Host port 8000 -> Container port 8000
+    restart: unless-stopped                # Auto-restart unless manually stopped
+    volumes:
+      - predictions_data:/app/data/predictions  # Persistent volume for SQLite database
+    environment:
+      - DB_PATH=/app/data/predictions/predictions.db  # Database file path
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # Check /health endpoint
-      interval: 30s                 # Run health check every 30 seconds
-      timeout: 10s                  # Timeout after 10 seconds
-      retries: 3                    # Retry 3 times before marking unhealthy
-      start_period: 15s             # Wait 15 seconds before starting health checks
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # Health check endpoint
+      interval: 30s                         # Check every 30 seconds
+      timeout: 10s                          # Timeout after 10 seconds
+      retries: 3                            # Retry 3 times before marking unhealthy
+      start_period: 15s                     # Wait 15 seconds before first check
 
-  # Streamlit dashboard frontend
+  # Dashboard Service
   dashboard:
     build:
-      context: .                    # Build from current directory
-      dockerfile: Dockerfile.streamlit  # Use this Dockerfile for dashboard
-    container_name: churn-dashboard     # Container name for easy reference
+      context: .                           # Build context - current directory
+      dockerfile: Dockerfile.streamlit     # Dockerfile for the Streamlit dashboard
+    container_name: churn-dashboard        # Container name for easy reference
     ports:
-      - "8501:8501"                 # Map host port 8501 to container port 8501
-    restart: unless-stopped         # Auto-restart unless manually stopped
+      - "8501:8501"                        # Host port 8501 -> Container port 8501
+    restart: unless-stopped                # Auto-restart unless manually stopped
     depends_on:
       api:
-        condition: service_healthy  # Wait for API to be healthy before starting
+        condition: service_healthy         # Wait for API health check to pass
     environment:
-      - API_URL=http://api:8000/predict  # Tell dashboard where to find the API
+      - API_URL=http://api:8000/predict                      # Single prediction endpoint
+      - API_BATCH_URL=http://api:8000/predict/batch/download # Batch prediction endpoint
+
+# Volumes
+volumes:
+  predictions_data:                         # Persistent volume for prediction database

@@ -389,7 +389,7 @@ Generates:
 python -m scripts.tune_hyperparameters --trials 50
 ~~~
 
-Prints best parameters to paste into `api/config.py`. Then retrain with:
+Prints best parameters to paste into `api/config.py`. Then retrain:
 ~~~
 python -m scripts.train_model
 ~~~
@@ -398,11 +398,6 @@ python -m scripts.train_model
 ~~~
 python -m scripts.find_threshold
 ~~~
-
-Generates:
-- `scripts/threshold_analysis/threshold_results.json`
-- `scripts/threshold_analysis/threshold_analysis.png`
-- Updates `src/models/metadata.json` with threshold recommendations
 
 **View MLflow UI**
 ~~~
@@ -426,6 +421,27 @@ streamlit run app/streamlit_app.py
 Dashboard: http://localhost:8501
 ~~~
 
+**Run Tests**
+~~~
+# All tests with coverage:
+pytest --cov=api --cov-report=term-missing -v
+
+# Integration tests only (require trained model):
+pytest tests/test_integration.py -v
+
+# Quick run:
+pytest
+~~~
+
+**Check Code Style**
+~~~
+flake8 .
+black --check .
+
+# Auto-format:
+black .
+~~~
+
 **Docker Deployment**
 ~~~
 # Build and start both services:
@@ -439,7 +455,8 @@ docker compose down
 ~~~
 
 The dashboard container waits for the API healthcheck to pass before starting.
-Prediction history is persisted via a Docker volume so it survives container restarts.
+Prediction history is persisted via a Docker volume and survives container restarts.
+
 
 ## Docker Architecture
 
