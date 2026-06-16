@@ -1,52 +1,44 @@
 name: Run Tests
 
-# When to run automatically
 on:
   push:
     branches:
       - main
       - master
-
   pull_request:
     branches:
       - main
       - master
 
-# What to do
 jobs:
   test:
-
-    # Use Ubuntu virtual machine
     runs-on: ubuntu-latest
 
     steps:
-
-      # Download the code from GitHub
+      # Checkout the repository code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install Python 3.11
+      # Set up Python 3.11
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # Install required packages
+      # Install development dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-          pip install pytest
 
-      # Run all test files
+      # Run pytest with coverage reporting
       - name: Run tests
-        run: |
-          pytest --cov=api --cov-report=term
+        run: pytest --cov=api --cov-report=term
 
-      # Run flake8 linter to check code style and errors
+      # Check code style with flake8
       - name: Run flake8
         run: flake8 .
 
-        # Check if code is formatted with Black (without modifying files)
+      # Verify code formatting with black (check only, no changes)
       - name: Check formatting
         run: black --check .

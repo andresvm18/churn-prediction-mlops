@@ -8,4 +8,15 @@ data/processed/
 
 .DS_Store
 
+# MLflow
 mlruns/
+mlflow.db
+mlflow.db-wal
+mlflow.db-shm
+
+# Test artifacts
+test_batch.csv
+scripts/threshold_analysis/
+
+# Optuna
+optuna.db
