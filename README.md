@@ -18,17 +18,17 @@
 A complete end-to-end Machine Learning project for predicting customer churn using the IBM Telco Customer Churn dataset.
 
 This project demonstrates the full lifecycle of a Machine Learning solution, including:
-- Data preprocessing
-- Exploratory Data Analysis (EDA)
-- Feature engineering
+- Data preprocessing and exploratory data analysis
+- Feature engineering and leakage-free feature selection
+- Hyperparameter tuning with Optuna
 - Model training with optimized classification threshold
 - Model explainability with SHAP
 - Experiment tracking with MLflow
-- FastAPI deployment
-- Streamlit multi-page dashboard
-- Batch prediction via CSV upload
+- Prediction history with SQLite persistence
+- FastAPI deployment with single and batch endpoints
+- Streamlit multi-page dashboard (Single / Batch / History)
 - Docker containerization
-- Automated testing with Pytest
+- Automated unit and integration testing with Pytest
 - Continuous Integration with GitHub Actions
 - Modular project architecture
 
@@ -47,11 +47,18 @@ Using customer demographics, subscription information, account history, and serv
 - Feature selection (leakage-free)
 - Train/Test split with stratification
 - SMOTE class balancing
-- XGBoost classification
+- XGBoost classification with Optuna-tuned hyperparameters
 - Optimized classification threshold via precision-recall analysis
 - Model evaluation with full classification report
 - Model persistence with Joblib
 - Training metadata saved to JSON (date, metrics, hyperparameters, threshold analysis)
+
+### Hyperparameter Tuning with Optuna
+- `scripts/tune_hyperparameters.py` runs N trials using TPE sampler
+- Every trial logged to MLflow under the `churn-tuning` experiment
+- Best parameters printed as a ready-to-paste `config.py` snippet
+- Configurable number of trials via `--trials` argument
+- Current best params found after 50 trials, improving F1 from 0.64 to **0.65** and recall from 0.77 to **0.79**
 
 ### Experiment Tracking with MLflow
 - Every training run logged automatically with MLflow
@@ -64,7 +71,7 @@ Using customer demographics, subscription information, account history, and serv
 - `scripts/find_threshold.py` evaluates precision, recall, and F1 across all thresholds
 - Generates precision-recall curve plot saved to `scripts/threshold_analysis/`
 - Threshold configurable in `api/config.py` — no code changes needed elsewhere
-- Current threshold: **0.37** (up from default 0.5), improving churn recall from 68% to **77%**
+- Current threshold: **0.41** (Optuna model optimal), improving churn recall from 68% to **79%**
 
 ### Explainable AI (XAI)
 - Global feature importance via SHAP TreeExplainer
@@ -72,12 +79,20 @@ Using customer demographics, subscription information, account history, and serv
 - Top 3 churn risk factors returned as `"Column: value"` strings
 - Business-friendly labels rendered as badges in the dashboard
 
+### Prediction History
+- Every single prediction saved automatically to SQLite (`predictions.db`)
+- REST endpoints: `GET /history`, `GET /history/stats`, `DELETE /history`
+- Filter by risk level or prediction outcome
+- Dashboard History page with summary metrics, risk breakdown, filterable table, and CSV export
+- Auto-migration: schema updates applied without data loss on startup
+
 ### FastAPI Backend
 REST API providing:
 - Strict input validation via Pydantic `Literal` types and `Field` constraints
-- Single customer prediction (`POST /predict`)
+- Single customer prediction (`POST /predict`) with history persistence
 - Batch prediction from CSV (`POST /predict/batch` and `POST /predict/batch/download`)
-- Churn probability estimation
+- Prediction history (`GET /history`, `GET /history/stats`, `DELETE /history`)
+- Churn probability estimation with configurable threshold
 - Risk classification (Low / Medium / High)
 - Personalized recommendations
 - SHAP-based feature explanations
@@ -103,10 +118,18 @@ Multi-page interface with sidebar navigation:
 - Full results table with downloadable CSV output
 - Limit: 1 000 rows per batch
 
+**History page:**
+- Summary metrics: total predictions, churn rate, average probability, high risk count
+- Risk breakdown (High / Medium / Low counts)
+- Filterable table by risk level, prediction outcome, and row limit
+- CSV export of filtered results
+- Clear history with confirmation dialog
+
 ### Dockerized Deployment
 - FastAPI backend with `/health` healthcheck endpoint
 - Streamlit frontend waits for API to be healthy (`condition: service_healthy`)
 - Automatic restart policy (`unless-stopped`)
+- `predictions.db` persisted via Docker volume
 
 ## Tech Stack
 
@@ -115,9 +138,11 @@ Multi-page interface with sidebar navigation:
 | Language | Python 3.11 |
 | ML Framework | Scikit-Learn |
 | Model | XGBoost |
+| Hyperparameter Tuning | Optuna |
 | Class Balancing | imbalanced-learn (SMOTE) |
 | Explainability | SHAP |
 | Experiment Tracking | MLflow |
+| History Persistence | SQLite (stdlib) |
 | Data Processing | Pandas / NumPy |
 | API | FastAPI |
 | Dashboard | Streamlit (multi-page) |
@@ -139,7 +164,8 @@ customer-churn-prediction/
 ├── api/
 │   ├── __init__.py
 │   ├── config.py          # Single source of truth: paths, columns, thresholds
-│   ├── main.py            # FastAPI app, single and batch endpoints
+│   ├── database.py        # SQLite persistence layer for prediction history
+│   ├── main.py            # FastAPI app: single, batch, and history endpoints
 │   ├── model_service.py   # Prediction pipeline and SHAP logic
 │   └── schemas.py         # Pydantic schemas (single + batch)
 │
@@ -147,7 +173,8 @@ customer-churn-prediction/
 │   ├── streamlit_app.py   # Navigation entry point
 │   ├── pages/
 │   │   ├── single.py      # Single prediction dashboard
-│   │   └── batch.py       # Batch prediction page
+│   │   ├── batch.py       # Batch prediction page
+│   │   └── history.py     # Prediction history page
 │   └── styles.css
 │
 ├── data/
@@ -165,17 +192,19 @@ customer-churn-prediction/
 │   └── 02_model_explainability.ipynb
 │
 ├── scripts/
-│   ├── train_model.py         # Training pipeline with MLflow tracking
-│   └── find_threshold.py      # Precision-recall threshold analysis
+│   ├── train_model.py             # Training pipeline with MLflow tracking
+│   ├── find_threshold.py          # Precision-recall threshold analysis
+│   └── tune_hyperparameters.py    # Optuna hyperparameter tuning
 │
 ├── src/
 │   └── models/
 │       ├── churn_model.pkl
 │       ├── label_encoders.pkl
-│       └── metadata.json      # Training date, metrics, threshold analysis
+│       └── metadata.json          # Training date, metrics, threshold analysis
 │
 ├── tests/
 │   ├── test_api.py            # Endpoint tests: happy path, 422, 503, 500
+│   ├── test_integration.py    # Integration tests with real model artifacts
 │   ├── test_model.py          # Business logic: risk level, recommendations
 │   └── test_preprocessing.py  # Encoding, unseen categories, SHAP format
 │
@@ -187,6 +216,7 @@ customer-churn-prediction/
 ├── Dockerfile.api
 ├── Dockerfile.streamlit
 ├── mlflow.db                  # MLflow SQLite backend (not committed)
+├── predictions.db             # Prediction history (not committed)
 ├── pytest.ini
 ├── README.md
 ├── requirements-dev.txt
@@ -205,18 +235,16 @@ customer-churn-prediction/
 
 ## Model Performance
 
-Current production model: **XGBoost + SMOTE + optimized threshold (0.37)**
+Current production model: **XGBoost + SMOTE + Optuna tuning + threshold 0.41**
 
-| Metric | Default threshold (0.50) | Optimized threshold (0.37) |
-|--------|--------------------------|---------------------------|
-| Accuracy | 78.5% | 77.1% |
-| Precision (churn) | 0.58 | 0.55 |
-| Recall (churn) | 0.68 | **0.77** |
-| F1 (churn) | 0.63 | 0.64 |
+| Metric | Baseline (default 0.50) | After threshold (0.37) | After Optuna + threshold (0.41) |
+|--------|------------------------|------------------------|--------------------------------|
+| Accuracy | 78.5% | 77.1% | 78.0% |
+| Precision (churn) | 0.58 | 0.55 | 0.55 |
+| Recall (churn) | 0.68 | 0.77 | **0.79** |
+| F1 (churn) | 0.63 | 0.64 | **0.65** |
 
-Business objective: maximize churn detection (recall on class 1). Lowering the threshold from 0.50 to 0.37 catches 9 more churners per 100 at the cost of a small precision drop — the right trade-off for a retention team.
-
-Run `python scripts/find_threshold.py` to re-evaluate thresholds on the current model and update `CLASSIFICATION_THRESHOLD` in `api/config.py`.
+Business objective: maximize churn detection (recall on class 1). Optuna tuning combined with threshold optimization catches 11 more churners per 100 compared to the baseline model.
 
 ## API Endpoints
 
@@ -307,7 +335,14 @@ Body: file=<your_customers.csv>
 Returns: churn_predictions.csv with all original columns + prediction results
 ~~~
 
-Limit: 1 000 rows per request.
+**Prediction History**
+~~~
+GET /history?limit=100&risk_level=High&prediction=1
+GET /history/stats
+DELETE /history
+~~~
+
+Limit: 1 000 rows per batch request.
 Validation errors return HTTP `422`. Service unavailable returns HTTP `503`.
 
 ## Running Locally
@@ -331,7 +366,7 @@ source venv/bin/activate
 
 **Install Dependencies**
 ~~~
-# Development (includes training, testing, MLflow, and linting tools):
+# Development (includes training, testing, MLflow, Optuna, and linting tools):
 pip install -r requirements-dev.txt
 
 # Production only:
@@ -340,7 +375,7 @@ pip install -r requirements-prod.txt
 
 **Train the Model**
 ~~~
-python scripts/train_model.py
+python -m scripts.train_model
 ~~~
 
 Generates:
@@ -349,9 +384,19 @@ Generates:
 - `src/models/metadata.json`
 - MLflow run logged to `mlflow.db`
 
+**Tune Hyperparameters (optional)**
+~~~
+python -m scripts.tune_hyperparameters --trials 50
+~~~
+
+Prints best parameters to paste into `api/config.py`. Then retrain with:
+~~~
+python -m scripts.train_model
+~~~
+
 **Analyze Threshold (optional)**
 ~~~
-python scripts/find_threshold.py
+python -m scripts.find_threshold
 ~~~
 
 Generates:
@@ -394,6 +439,7 @@ docker compose down
 ~~~
 
 The dashboard container waits for the API healthcheck to pass before starting.
+Prediction history is persisted via a Docker volume so it survives container restarts.
 
 ## Docker Architecture
 
@@ -416,6 +462,7 @@ The dashboard container waits for the API healthcheck to pass before starting.
 ┌─────────────────────┐
 │  XGBoost + SHAP     │
 │    Model Layer      │
+│  SQLite History DB  │
 └─────────────────────┘
 ~~~
 
@@ -431,15 +478,16 @@ Dataset
 Preprocessing + Encoding
    │
    ▼
- SMOTE
+Optuna Tuning
+(tune_hyperparameters.py)
+   │
+   ▼
+ SMOTE + XGBoost Training
+(train_model.py)
    │
    ▼
 Threshold Analysis
 (find_threshold.py)
-   │
-   ▼
-XGBoost Training
-(train_model.py)
    │
    ▼
 MLflow Run Logged
@@ -448,12 +496,14 @@ MLflow Run Logged
 Joblib Artifacts + metadata.json
    │
    ├── FastAPI (api/)
-   │     ├── POST /predict
-   │     └── POST /predict/batch
+   │     ├── POST /predict → saves to predictions.db
+   │     ├── POST /predict/batch
+   │     └── GET  /history
    │
    └── Streamlit (app/)
          ├── Single Prediction
-         └── Batch Prediction
+         ├── Batch Prediction
+         └── History
 ~~~
 
 ## CI/CD Pipeline
@@ -465,17 +515,20 @@ GitHub Actions runs on every push and pull request to `main`:
 3. Check code style (`flake8`)
 4. Validate formatting (`black --check`)
 
+Integration tests auto-skip in CI if model artifacts are not present.
+
 **Workflow:** Developer → Push → GitHub Actions → Tests + Lint → Pass / Fail
 
 ## Testing
 
-The project includes 45 automated tests across 3 files with 78% coverage on the API layer.
+The project includes **60 automated tests** across 4 files.
 
-| File | What it covers |
-|------|---------------|
-| `test_api.py` | Endpoints: happy path, 7 validation cases (422), service errors (503 / 500) |
-| `test_model.py` | Risk level thresholds, recommendations, DataFrame building |
-| `test_preprocessing.py` | Encoding pipeline, unseen categories, SHAP factor format |
+| File | Tests | What it covers |
+|------|-------|---------------|
+| `test_api.py` | 15 | Endpoints: happy path, 7 validation cases (422), service errors (503 / 500) |
+| `test_integration.py` | 15 | Full pipeline with real model: output correctness, history, batch |
+| `test_model.py` | 8 | Business logic: risk level thresholds, recommendations, DataFrame building |
+| `test_preprocessing.py` | 22 | Encoding pipeline, unseen categories, SHAP factor format |
 
 Run locally:
 
@@ -483,15 +536,20 @@ Run locally:
 # All tests with coverage:
 pytest --cov=api --cov-report=term-missing -v
 
+# Integration tests only:
+pytest tests/test_integration.py -v
+
 # Quick run:
 pytest
 ~~~
+
+Integration tests require model artifacts (`src/models/churn_model.pkl`).
+Run `python -m scripts.train_model` first if they are missing.
 
 ## Future Improvements
 
 - Automated retraining pipeline triggered by data drift detection (Evidently AI)
 - A/B testing for model versions via MLflow model registry
-- Authentication and authorization (API key / JWT)
 - Cloud deployment monitoring and alerting
 - Structured JSON logging for production observability
 
