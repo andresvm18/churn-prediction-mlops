@@ -116,14 +116,18 @@ Multi-page interface with sidebar navigation:
 - Summary metrics: total customers, predicted churn rate, errors
 - Risk breakdown by level (High / Medium / Low)
 - Full results table with downloadable CSV output
+- All successful batch predictions saved to history automatically
 - Limit: 1 000 rows per batch
 
 **History page:**
 - Summary metrics: total predictions, churn rate, average probability, high risk count
 - Risk breakdown (High / Medium / Low counts)
+- Analytics charts: daily churn rate over time and probability distribution by risk range
 - Filterable table by risk level, prediction outcome, and row limit
+- Colored badges for Prediction (Churn / No Churn) and Risk level
 - CSV export of filtered results
 - Clear history with confirmation dialog
+- Both single and batch predictions are logged automatically
 
 ### Dockerized Deployment
 - FastAPI backend with `/health` healthcheck endpoint
@@ -538,14 +542,14 @@ Integration tests auto-skip in CI if model artifacts are not present.
 
 ## Testing
 
-The project includes **60 automated tests** across 4 files.
+The project includes **71 automated tests** across 4 files with 93% coverage on the API layer.
 
 | File | Tests | What it covers |
 |------|-------|---------------|
 | `test_api.py` | 15 | Endpoints: happy path, 7 validation cases (422), service errors (503 / 500) |
-| `test_integration.py` | 15 | Full pipeline with real model: output correctness, history, batch |
+| `test_integration.py` | 27 | Full pipeline with real model: output correctness, history persistence, batch endpoints, DB coverage, CSV validation |
 | `test_model.py` | 8 | Business logic: risk level thresholds, recommendations, DataFrame building |
-| `test_preprocessing.py` | 22 | Encoding pipeline, unseen categories, SHAP factor format |
+| `test_preprocessing.py` | 21 | Encoding pipeline, unseen categories, SHAP factor format |
 
 Run locally:
 
@@ -553,7 +557,7 @@ Run locally:
 # All tests with coverage:
 pytest --cov=api --cov-report=term-missing -v
 
-# Integration tests only:
+# Integration tests only (require trained model):
 pytest tests/test_integration.py -v
 
 # Quick run:
@@ -562,6 +566,7 @@ pytest
 
 Integration tests require model artifacts (`src/models/churn_model.pkl`).
 Run `python -m scripts.train_model` first if they are missing.
+Integration tests use an isolated temporary database — they never write to `predictions.db`.
 
 ## Future Improvements
 
