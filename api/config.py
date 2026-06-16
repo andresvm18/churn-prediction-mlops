@@ -51,7 +51,7 @@ CATEGORICAL_COLUMNS = [
 ]
 
 # Classification threshold
-CLASSIFICATION_THRESHOLD = 0.37
+CLASSIFICATION_THRESHOLD = 0.41
 
 # Risk level thresholds (probability values between 0 and 1)
 RISK_THRESHOLD_HIGH = 0.7  # >= 70% = High risk
@@ -62,11 +62,15 @@ BASELINE_CHURN_RATE = 26.0
 
 # XGBoost model hyperparameters
 XGBOOST_PARAMS = {
-    "n_estimators": 200,  # Number of trees
-    "max_depth": 6,  # Maximum tree depth
-    "learning_rate": 0.05,  # Step size shrinkage
-    "subsample": 0.8,  # Fraction of samples per tree
-    "colsample_bytree": 0.8,  # Fraction of features per tree
+    "n_estimators": 270,  # Number of boosting rounds (trees)
+    "max_depth": 7,  # Maximum tree depth - controls model complexity
+    "learning_rate": 0.022554,  # Step size shrinkage - prevents overfitting
+    "subsample": 0.515124,  # Fraction of training samples used per tree
+    "min_child_weight": 1,  # Minimum sum of instance weights in a child node
+    "gamma": 0.128656,  # Minimum loss reduction required for further partition
+    "reg_alpha": 0.339024,  # L1 regularization on weights (Lasso)
+    "reg_lambda": 1.587913,  # L2 regularization on weights (Ridge)
+    "colsample_bytree": 0.8,  # Fraction of features used per tree
     "random_state": 42,  # Reproducibility seed
-    "eval_metric": "logloss",  # Evaluation metric
+    "eval_metric": "logloss",  # Evaluation metric for binary classification
 }

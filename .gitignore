@@ -20,3 +20,5 @@ scripts/threshold_analysis/
 
 # Optuna
 optuna.db
+
+scripts/tuning_results/
