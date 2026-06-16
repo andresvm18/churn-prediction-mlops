@@ -1,5 +1,7 @@
+import pytest
+
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from api import model_service
 from api.model_service import (
@@ -77,10 +79,15 @@ def test_build_input_dataframe():
 
 
 def test_predict_customer_churn_without_model():
-    # Simulate missing model files
+    # Reset the loaded state so _load_artifacts runs again
+    model_service._artifacts_loaded = False
+    model_service._churn_model = None
+    model_service._categorical_encoders = None
+    model_service._model_explainer = None
+
     with patch("api.model_service.os.path.exists", return_value=False):
-        try:
-            model_service.predict_customer_churn(None)
-            assert False, "Should have raised RuntimeError"
-        except RuntimeError as exc:
-            assert "not found" in str(exc).lower()
+        with pytest.raises(RuntimeError, match="not found"):
+            model_service.predict_customer_churn(MagicMock())
+
+    # Restore state so subsequent tests work normally
+    model_service._artifacts_loaded = False

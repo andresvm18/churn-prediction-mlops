@@ -17,15 +17,16 @@ def get_connection() -> sqlite3.Connection:
 
 
 def init_db() -> None:
+    # Create the predictions table if it does not exist.
     with get_connection() as conn:
-        # Create table with all prediction fields
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS predictions (
                 id                INTEGER PRIMARY KEY AUTOINCREMENT,
                 created_at        TEXT    NOT NULL,
                 gender            TEXT,
-                senior_citizen    INTEGER, 
-                partner           TEXT, 
+                senior_citizen    INTEGER,
+                partner           TEXT,
                 dependents        TEXT,
                 tenure_months     INTEGER,
                 internet_service  TEXT,
@@ -33,13 +34,35 @@ def init_db() -> None:
                 monthly_charges   REAL,
                 total_charges     REAL,
                 prediction        INTEGER,
-                prediction_label  TEXT, 
-                churn_probability REAL
+                prediction_label  TEXT,
+                churn_probability REAL,
                 risk_level        TEXT,
                 recommendation    TEXT,
                 top_factors       TEXT
             )
-        """)
+            """
+        )
+
+        # Auto-migrate, add any missing columns without dropping existing data
+        existing_cols = {
+            row[1]
+            for row in conn.execute("PRAGMA table_info(predictions)").fetchall()
+        }
+        required_cols = {
+            "gender": "TEXT", "senior_citizen": "INTEGER",
+            "partner": "TEXT", "dependents": "TEXT",
+            "tenure_months": "INTEGER", "internet_service": "TEXT",
+            "contract": "TEXT", "monthly_charges": "REAL",
+            "total_charges": "REAL", "prediction": "INTEGER",
+            "prediction_label": "TEXT", "churn_probability": "REAL",
+            "risk_level": "TEXT", "recommendation": "TEXT",
+            "top_factors": "TEXT",
+        }
+        for col, col_type in required_cols.items():
+            if col not in existing_cols:
+                conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} {col_type}")
+                logger.info("Added missing column '%s' to predictions table", col)
+
         conn.commit()
     logger.info("Database initialized at %s", DB_PATH)
 
