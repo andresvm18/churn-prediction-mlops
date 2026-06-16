@@ -1,15 +1,16 @@
-import io
 import json
 import os
 from pathlib import Path
+
 import pandas as pd
 import plotly.graph_objects as go
 import requests
 import streamlit as st
 
+# API endpoint for the FastAPI backend
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
-# Load CSS
+# Load custom CSS styles
 css_path = Path(__file__).parent.parent / "styles.css"
 if css_path.exists():
     with open(css_path, "r", encoding="utf-8") as f:
@@ -34,13 +35,16 @@ st.html("""
 </div>
 """)
 
-# Fetch helpers
+
+# API Helpers
+
 def fetch_stats() -> dict:
     try:
         resp = requests.get(f"{API_URL}/history/stats", timeout=5)
         return resp.json() if resp.status_code == 200 else {}
     except Exception:
         return {}
+
 
 def fetch_history(limit: int, risk_level: str, pred_filter: str) -> list[dict]:
     params = {"limit": limit}
@@ -50,11 +54,13 @@ def fetch_history(limit: int, risk_level: str, pred_filter: str) -> list[dict]:
         params["prediction"] = 1
     elif pred_filter == "No Churn":
         params["prediction"] = 0
+    
     try:
         resp = requests.get(f"{API_URL}/history", params=params, timeout=5)
         return resp.json() if resp.status_code == 200 else []
     except Exception:
         return []
+
 
 def fetch_all_for_charts() -> list[dict]:
     try:
@@ -63,27 +69,124 @@ def fetch_all_for_charts() -> list[dict]:
     except Exception:
         return []
 
-# Shared chart layout
+
+# Table Builder
+def build_table(rows: list[dict]) -> str:
+    
+    def pred_badge(label: str) -> str:
+        if label == "Churn":
+            return (
+                '<span style="background:#fdf0ef;color:#c0392b;border:1px solid #f5c6c2;'
+                'border-radius:999px;padding:2px 10px;font-size:0.7rem;font-weight:600;">'
+                "Churn</span>"
+            )
+        return (
+            '<span style="background:#edf7f0;color:#1e8449;border:1px solid #b7dfc5;'
+            'border-radius:999px;padding:2px 10px;font-size:0.7rem;font-weight:600;">'
+            "No Churn</span>"
+        )
+
+    def risk_badge(level: str) -> str:
+        styles = {
+            "High":   "background:#fdf0ef;color:#c0392b;border:1px solid #f5c6c2;",
+            "Medium": "background:#fef9ec;color:#d68910;border:1px solid #f5e0a0;",
+            "Low":    "background:#edf7f0;color:#1e8449;border:1px solid #b7dfc5;",
+        }
+        s = styles.get(level, "background:#f0ece5;color:#5c574f;border:1px solid #e2ddd6;")
+        return (
+            f'<span style="{s}border-radius:999px;padding:2px 8px;'
+            f'font-size:0.68rem;font-weight:600;">{level}</span>'
+        )
+
+    def fmt_factors(raw: str) -> str:
+        """Parse JSON top_factors and join with dots."""
+        try:
+            factors = json.loads(raw) if raw else []
+            return " · ".join(factors)
+        except Exception:
+            return raw or ""
+
+    def fmt_date(raw: str) -> str:
+        try:
+            return pd.to_datetime(raw).strftime("%Y-%m-%d %H:%M")
+        except Exception:
+            return raw
+
+    # Table header styles
+    th = (
+        "padding:0.6rem 0.85rem;text-align:left;font-size:0.68rem;"
+        "font-family:'DM Mono',monospace;text-transform:uppercase;"
+        "letter-spacing:0.08em;color:#9c968d;font-weight:500;"
+        "white-space:nowrap;border-bottom:2px solid #e2ddd6;background:#f8f6f2;"
+    )
+    
+    # Table cell styles
+    td = (
+        "padding:0.6rem 0.85rem;color:#1a1714;font-size:0.82rem;"
+        "border-bottom:1px solid #f0ece5;vertical-align:middle;"
+    )
+    td_f = (
+        "padding:0.6rem 0.85rem;color:#5c574f;font-size:0.75rem;"
+        "border-bottom:1px solid #f0ece5;vertical-align:middle;"
+        "max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+    )
+
+    # Build header row
+    headers = [
+        "Date", "Gender", "Tenure", "Contract", "Internet",
+        "Monthly $", "Prediction", "Probability", "Risk", "Top Factors",
+    ]
+    header_html = "".join(f'<th style="{th}">{h}</th>' for h in headers)
+
+    # Build data rows
+    rows_html = ""
+    for i, row in enumerate(rows):
+        bg = "#ffffff" if i % 2 == 0 else "#fafaf9"
+        prob = row.get("churn_probability", 0)
+        rows_html += (
+            f'<tr style="background:{bg};" '
+            f'onmouseover="this.style.background=\'#f8f6f2\'" '
+            f'onmouseout="this.style.background=\'{bg}\'">'
+            f'<td style="{td}">{fmt_date(row.get("created_at", ""))}</td>'
+            f'<td style="{td}">{row.get("gender", "")}</td>'
+            f'<td style="{td}">{row.get("tenure_months", "")}</td>'
+            f'<td style="{td}">{row.get("contract", "")}</td>'
+            f'<td style="{td}">{row.get("internet_service", "")}</td>'
+            f'<td style="{td}">${row.get("monthly_charges", 0):.0f}</td>'
+            f'<td style="{td}">{pred_badge(row.get("prediction_label", ""))}</td>'
+            f'<td style="{td}">{float(prob):.4f}</td>'
+            f'<td style="{td}">{risk_badge(row.get("risk_level", ""))}</td>'
+            f'<td style="{td_f}">{fmt_factors(row.get("top_factors", ""))}</td>'
+            f"</tr>"
+        )
+
+    # Return complete table with container
+    return (
+        '<div style="overflow-x:auto;border:1px solid #e2ddd6;border-radius:12px;'
+        'overflow:hidden;background:white;margin-bottom:0.5rem;">'
+        '<table style="width:100%;border-collapse:collapse;background:white;">'
+        f"<thead><tr>{header_html}</tr></thead>"
+        f"<tbody>{rows_html}</tbody>"
+        "</table></div>"
+    )
+
+
+# Chart Layout
 CHART_LAYOUT = dict(
     paper_bgcolor="white",
     plot_bgcolor="white",
     font=dict(color="#1a1714", family="Outfit, sans-serif", size=12),
     margin=dict(l=40, r=20, t=30, b=40),
     height=240,
-    xaxis=dict(
-        gridcolor="#e2ddd6",
-        linecolor="#e2ddd6",
-        tickfont=dict(color="#5c574f"),
-    ),
-    yaxis=dict(
-        gridcolor="#e2ddd6",
-        linecolor="#e2ddd6",
-        tickfont=dict(color="#5c574f"),
-    ),
+    xaxis=dict(gridcolor="#e2ddd6", linecolor="#e2ddd6", tickfont=dict(color="#5c574f")),
+    yaxis=dict(gridcolor="#e2ddd6", linecolor="#e2ddd6", tickfont=dict(color="#5c574f")),
 )
 
-# Summary stats
+
+# Summary Stats
 stats = fetch_stats()
+
+# Show empty state if no predictions exist
 if not stats or stats.get("total", 0) == 0:
     st.html("""
     <div class="ci-empty-state">
@@ -103,6 +206,7 @@ if not stats or stats.get("total", 0) == 0:
     """)
     st.stop()
 
+# Display summary metrics
 st.html('<div class="ci-section">📊 Summary</div>')
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Total predictions", stats["total"])
@@ -111,7 +215,7 @@ c3.metric("Avg probability",   f"{stats['avg_probability']}%")
 c4.metric("High risk",         stats["high_risk"])
 st.html('<hr class="ci-divider-light">')
 
-# Risk breakdown
+# Risk Breakdown
 st.html('<div class="ci-section">🎯 Risk breakdown</div>')
 rb1, rb2, rb3 = st.columns(3)
 rb1.metric("🔴 High risk",   stats["high_risk"])
@@ -119,9 +223,10 @@ rb2.metric("🟡 Medium risk", stats["medium_risk"])
 rb3.metric("🟢 Low risk",    stats["low_risk"])
 st.html('<hr class="ci-divider-light">')
 
-# Charts
+# Analytics Charts
 st.html('<div class="ci-section">📈 Analytics</div>')
 chart_data = fetch_all_for_charts()
+
 if chart_data:
     chart_df = pd.DataFrame(chart_data)
     chart_df["created_at"] = pd.to_datetime(chart_df["created_at"])
@@ -135,6 +240,8 @@ if chart_data:
     with col_left:
         st.markdown("**Churn rate over time**")
         st.caption("Daily average churn probability of analyzed customers.")
+
+        # Resample data by day
         temporal = (
             chart_df.set_index("created_at")
             .resample("D")["churn_probability"]
@@ -145,6 +252,7 @@ if chart_data:
         temporal["avg_probability"] = (temporal["avg_probability"] * 100).round(1)
         temporal = temporal[temporal["count"] > 0]
 
+        # Show chart or fallback based on data availability
         if len(temporal) >= 2:
             fig = go.Figure()
             fig.add_trace(go.Scatter(
@@ -153,7 +261,6 @@ if chart_data:
                 mode="lines+markers",
                 line=dict(color="#c0392b", width=2),
                 marker=dict(color="#c0392b", size=6),
-                name="Avg probability",
                 hovertemplate="%{x|%b %d}<br>%{y:.1f}%<extra></extra>",
             ))
             fig.update_layout(
@@ -163,6 +270,7 @@ if chart_data:
             )
             st.plotly_chart(fig, use_container_width=True)
         elif len(temporal) == 1:
+            # Only one day of data
             st.metric(
                 "Today's avg probability",
                 f"{temporal['avg_probability'].iloc[0]:.1f}%",
@@ -175,17 +283,18 @@ if chart_data:
     with col_right:
         st.markdown("**Probability distribution**")
         st.caption("How predictions are distributed across risk ranges.")
+
+        # Create probability buckets
         bins = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.01]
         labels = [
             "0-10%", "10-20%", "20-30%", "30-40%", "40-50%",
             "50-60%", "60-70%", "70-80%", "80-90%", "90-100%",
         ]
         chart_df["bucket"] = pd.cut(
-            chart_df["churn_probability"],
-            bins=bins,
-            labels=labels,
-            right=False,
+            chart_df["churn_probability"], bins=bins, labels=labels, right=False
         )
+        
+        # Count records per bucket
         dist = (
             chart_df["bucket"]
             .value_counts()
@@ -193,10 +302,13 @@ if chart_data:
             .reset_index()
         )
         dist.columns = ["range", "count"]
+        
+        # Color bars: green (low), yellow (medium), red (high)
         bar_colors = [
             "#1e8449" if i < 4 else "#d68910" if i < 7 else "#c0392b"
             for i in range(len(dist))
         ]
+        
         fig2 = go.Figure()
         fig2.add_trace(go.Bar(
             x=dist["range"],
@@ -224,56 +336,23 @@ with f2:
 with f3:
     limit = st.selectbox("Show last", [25, 50, 100, 200], index=1)
 
-# History table
+# History Table
 rows = fetch_history(limit, risk_filter, pred_filter)
+
 if not rows:
     st.info("No predictions match the selected filters.")
     st.stop()
 
+# Render custom HTML table
+st.html(build_table(rows))
+st.html('<hr class="ci-divider-light">')
+
+# Export & Clear
 df = pd.DataFrame(rows)
-if "top_factors" in df.columns:
-    df["top_factors"] = df["top_factors"].apply(
-        lambda x: " | ".join(json.loads(x)) if x else ""
-    )
-if "created_at" in df.columns:
-    df["created_at"] = (
-        pd.to_datetime(df["created_at"]).dt.strftime("%Y-%m-%d %H:%M")
-    )
-
-display_cols = {
-    "created_at":        "Date",
-    "gender":            "Gender",
-    "tenure_months":     "Tenure",
-    "contract":          "Contract",
-    "internet_service":  "Internet",
-    "monthly_charges":   "Monthly $",
-    "prediction_label":  "Prediction",
-    "churn_probability": "Probability",
-    "risk_level":        "Risk",
-    "top_factors":       "Top Factors",
-}
-available = {k: v for k, v in display_cols.items() if k in df.columns}
-display_df = df[list(available.keys())].rename(columns=available)
-
-st.html('<div class="ci-dataframe-wrap">')
-st.dataframe(
-    display_df,
-    use_container_width=True,
-    hide_index=True,
-    column_config={
-        "Probability": st.column_config.NumberColumn(format="%.4f"),
-        "Monthly $":   st.column_config.NumberColumn(format="$%.0f"),
-    },
-)
-st.html('</div>')
-
-st.html('<hr class="ci-divider-light">')
-
-# Export & clear
-st.html('<hr class="ci-divider-light">')
 btn_col1, btn_col2, _ = st.columns([1, 1, 2])
 
 with btn_col1:
+    # Export to CSV
     csv_data = df.to_csv(index=False).encode("utf-8")
     st.download_button(
         label="⬇ Export CSV",
@@ -286,6 +365,7 @@ with btn_col1:
     )
 
 with btn_col2:
+    # Clear history button
     if st.button(
         "🗑 Clear history",
         use_container_width=True,
@@ -293,6 +373,7 @@ with btn_col2:
     ):
         st.session_state["confirm_clear"] = True
 
+# Confirmation dialog for clearing history
 if st.session_state.get("confirm_clear"):
     st.warning("Are you sure? This will delete all prediction history permanently.")
     confirm_col1, confirm_col2, _ = st.columns([1, 1, 3])

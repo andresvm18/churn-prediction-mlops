@@ -653,24 +653,6 @@ button[data-testid="stBaseButton-headerNoPadding"] svg {
     flex-shrink: 0 !important;
 }
 
-.ci-dataframe-wrap {
-    border: 1.5px solid #1a1714 !important;
-    border-radius: var(--radius) !important;
-    overflow: hidden !important;
-    background: #ffffff !important;
-}
-[data-testid="stDataFrame"] {
-    background: #ffffff !important;
-}
-[data-testid="stDataFrame"] > div {
-    background: #ffffff !important;
-}
-
-[data-testid="stDataFrame"] [data-testid="glideDataGridContainer"] {
-    background: #ffffff !important;
-    color: #1a1714 !important;
-}
-
 [data-testid="stButton"]:has(button[data-testid="stBaseButton-secondary"]:not([key])) button,
 button[key="clear_history_btn"] {
     background: #c0392b !important;
