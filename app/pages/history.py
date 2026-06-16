@@ -2,8 +2,8 @@ import io
 import json
 import os
 from pathlib import Path
-
 import pandas as pd
+import plotly.graph_objects as go
 import requests
 import streamlit as st
 
@@ -34,15 +34,13 @@ st.html("""
 </div>
 """)
 
-
-# Fetch data
+# Fetch helpers
 def fetch_stats() -> dict:
     try:
         resp = requests.get(f"{API_URL}/history/stats", timeout=5)
         return resp.json() if resp.status_code == 200 else {}
     except Exception:
         return {}
-
 
 def fetch_history(limit: int, risk_level: str, pred_filter: str) -> list[dict]:
     params = {"limit": limit}
@@ -58,13 +56,36 @@ def fetch_history(limit: int, risk_level: str, pred_filter: str) -> list[dict]:
     except Exception:
         return []
 
+def fetch_all_for_charts() -> list[dict]:
+    try:
+        resp = requests.get(f"{API_URL}/history?limit=1000", timeout=5)
+        return resp.json() if resp.status_code == 200 else []
+    except Exception:
+        return []
+
+# Shared chart layout
+CHART_LAYOUT = dict(
+    paper_bgcolor="white",
+    plot_bgcolor="white",
+    font=dict(color="#1a1714", family="Outfit, sans-serif", size=12),
+    margin=dict(l=40, r=20, t=30, b=40),
+    height=240,
+    xaxis=dict(
+        gridcolor="#e2ddd6",
+        linecolor="#e2ddd6",
+        tickfont=dict(color="#5c574f"),
+    ),
+    yaxis=dict(
+        gridcolor="#e2ddd6",
+        linecolor="#e2ddd6",
+        tickfont=dict(color="#5c574f"),
+    ),
+)
 
 # Summary stats
-
 stats = fetch_stats()
-
 if not stats or stats.get("total", 0) == 0:
-    st.html(f"""
+    st.html("""
     <div class="ci-empty-state">
         <div class="ci-empty-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -85,10 +106,9 @@ if not stats or stats.get("total", 0) == 0:
 st.html('<div class="ci-section">📊 Summary</div>')
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Total predictions", stats["total"])
-c2.metric("Predicted churn", f"{stats['churn_count']} ({stats['churn_rate']}%)")
-c3.metric("Avg probability", f"{stats['avg_probability']}%")
-c4.metric("High risk", stats["high_risk"])
-
+c2.metric("Predicted churn",   f"{stats['churn_count']} ({stats['churn_rate']}%)")
+c3.metric("Avg probability",   f"{stats['avg_probability']}%")
+c4.metric("High risk",         stats["high_risk"])
 st.html('<hr class="ci-divider-light">')
 
 # Risk breakdown
@@ -97,6 +117,100 @@ rb1, rb2, rb3 = st.columns(3)
 rb1.metric("🔴 High risk",   stats["high_risk"])
 rb2.metric("🟡 Medium risk", stats["medium_risk"])
 rb3.metric("🟢 Low risk",    stats["low_risk"])
+st.html('<hr class="ci-divider-light">')
+
+# Charts
+st.html('<div class="ci-section">📈 Analytics</div>')
+chart_data = fetch_all_for_charts()
+if chart_data:
+    chart_df = pd.DataFrame(chart_data)
+    chart_df["created_at"] = pd.to_datetime(chart_df["created_at"])
+    chart_df["churn_probability"] = pd.to_numeric(
+        chart_df["churn_probability"], errors="coerce"
+    )
+
+    col_left, col_right = st.columns(2)
+
+    # Left: Temporal evolution
+    with col_left:
+        st.markdown("**Churn rate over time**")
+        st.caption("Daily average churn probability of analyzed customers.")
+        temporal = (
+            chart_df.set_index("created_at")
+            .resample("D")["churn_probability"]
+            .agg(["mean", "count"])
+            .reset_index()
+        )
+        temporal.columns = ["date", "avg_probability", "count"]
+        temporal["avg_probability"] = (temporal["avg_probability"] * 100).round(1)
+        temporal = temporal[temporal["count"] > 0]
+
+        if len(temporal) >= 2:
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=temporal["date"],
+                y=temporal["avg_probability"],
+                mode="lines+markers",
+                line=dict(color="#c0392b", width=2),
+                marker=dict(color="#c0392b", size=6),
+                name="Avg probability",
+                hovertemplate="%{x|%b %d}<br>%{y:.1f}%<extra></extra>",
+            ))
+            fig.update_layout(
+                **CHART_LAYOUT,
+                yaxis_title="Avg churn probability (%)",
+                showlegend=False,
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        elif len(temporal) == 1:
+            st.metric(
+                "Today's avg probability",
+                f"{temporal['avg_probability'].iloc[0]:.1f}%",
+            )
+            st.caption("Make predictions on multiple days to see the trend.")
+        else:
+            st.info("Not enough data to render the chart yet.")
+
+    # Right: Probability distribution
+    with col_right:
+        st.markdown("**Probability distribution**")
+        st.caption("How predictions are distributed across risk ranges.")
+        bins = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.01]
+        labels = [
+            "0-10%", "10-20%", "20-30%", "30-40%", "40-50%",
+            "50-60%", "60-70%", "70-80%", "80-90%", "90-100%",
+        ]
+        chart_df["bucket"] = pd.cut(
+            chart_df["churn_probability"],
+            bins=bins,
+            labels=labels,
+            right=False,
+        )
+        dist = (
+            chart_df["bucket"]
+            .value_counts()
+            .reindex(labels, fill_value=0)
+            .reset_index()
+        )
+        dist.columns = ["range", "count"]
+        bar_colors = [
+            "#1e8449" if i < 4 else "#d68910" if i < 7 else "#c0392b"
+            for i in range(len(dist))
+        ]
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(
+            x=dist["range"],
+            y=dist["count"],
+            marker_color=bar_colors,
+            hovertemplate="%{x}<br>%{y} predictions<extra></extra>",
+        ))
+        fig2.update_layout(
+            **CHART_LAYOUT,
+            yaxis_title="Number of predictions",
+            showlegend=False,
+            bargap=0.15,
+        )
+        st.plotly_chart(fig2, use_container_width=True)
 
 st.html('<hr class="ci-divider-light">')
 
@@ -112,24 +226,20 @@ with f3:
 
 # History table
 rows = fetch_history(limit, risk_filter, pred_filter)
-
 if not rows:
     st.info("No predictions match the selected filters.")
     st.stop()
 
 df = pd.DataFrame(rows)
-
-# Parse top_factors from JSON string back to readable format
 if "top_factors" in df.columns:
     df["top_factors"] = df["top_factors"].apply(
         lambda x: " | ".join(json.loads(x)) if x else ""
     )
-
-# Format timestamp
 if "created_at" in df.columns:
-    df["created_at"] = pd.to_datetime(df["created_at"]).dt.strftime("%Y-%m-%d %H:%M")
+    df["created_at"] = (
+        pd.to_datetime(df["created_at"]).dt.strftime("%Y-%m-%d %H:%M")
+    )
 
-# Select and rename display columns
 display_cols = {
     "created_at":        "Date",
     "gender":            "Gender",
@@ -145,14 +255,25 @@ display_cols = {
 available = {k: v for k, v in display_cols.items() if k in df.columns}
 display_df = df[list(available.keys())].rename(columns=available)
 
-st.dataframe(display_df, use_container_width=True, hide_index=True)
+st.html('<div class="ci-dataframe-wrap">')
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    hide_index=True,
+    column_config={
+        "Probability": st.column_config.NumberColumn(format="%.4f"),
+        "Monthly $":   st.column_config.NumberColumn(format="$%.0f"),
+    },
+)
+st.html('</div>')
 
 st.html('<hr class="ci-divider-light">')
 
-# Export
-col_dl, col_clear, _ = st.columns([1, 1, 2])
+# Export & clear
+st.html('<hr class="ci-divider-light">')
+btn_col1, btn_col2, _ = st.columns([1, 1, 2])
 
-with col_dl:
+with btn_col1:
     csv_data = df.to_csv(index=False).encode("utf-8")
     st.download_button(
         label="⬇ Export CSV",
@@ -161,17 +282,27 @@ with col_dl:
         mime="text/csv",
         type="primary",
         use_container_width=True,
+        key="export_csv_btn",
     )
 
-with col_clear:
-    if st.button("🗑 Clear history", use_container_width=True):
+with btn_col2:
+    if st.button(
+        "🗑 Clear history",
+        use_container_width=True,
+        key="clear_history_btn",
+    ):
         st.session_state["confirm_clear"] = True
 
 if st.session_state.get("confirm_clear"):
     st.warning("Are you sure? This will delete all prediction history permanently.")
-    yes, no, _ = st.columns([1, 1, 3])
-    with yes:
-        if st.button("Yes, delete all", type="primary", use_container_width=True):
+    confirm_col1, confirm_col2, _ = st.columns([1, 1, 3])
+    with confirm_col1:
+        if st.button(
+            "Yes, delete all",
+            type="primary",
+            use_container_width=True,
+            key="confirm_delete_btn",
+        ):
             try:
                 resp = requests.delete(f"{API_URL}/history", timeout=5)
                 if resp.status_code == 200:
@@ -180,8 +311,12 @@ if st.session_state.get("confirm_clear"):
                     st.rerun()
             except Exception as e:
                 st.error(f"Error: {e}")
-    with no:
-        if st.button("Cancel", use_container_width=True):
+    with confirm_col2:
+        if st.button(
+            "Cancel",
+            use_container_width=True,
+            key="cancel_delete_btn",
+        ):
             st.session_state["confirm_clear"] = False
             st.rerun()
 

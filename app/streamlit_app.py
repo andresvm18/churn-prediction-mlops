@@ -8,6 +8,20 @@ st.set_page_config(
     initial_sidebar_state="expanded",  # Keep sidebar open by default
 )
 
+# Force light theme for all pages including dataframes
+st.markdown(
+    """
+    <style>
+    [data-testid="stDataFrame"] > div {
+        background: white !important;
+        border: 1px solid #e2ddd6 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 single_page = st.Page("pages/single.py", title="Single Prediction", icon="📊")
 batch_page = st.Page("pages/batch.py", title="Batch Prediction", icon="📂")
