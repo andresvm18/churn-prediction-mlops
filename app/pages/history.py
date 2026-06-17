@@ -81,13 +81,15 @@ def build_table(rows: list[dict]) -> str:
     def pred_badge(label: str) -> str:
         if label == "Churn":
             return (
-                '<span style="background:#fdf0ef;color:#c0392b;border:1px solid #f5c6c2;'
-                'border-radius:999px;padding:2px 10px;font-size:0.7rem;font-weight:600;">'
+                '<span style="background:#fdf0ef;color:#c0392b;'
+                'border:1px solid #f5c6c2;border-radius:999px;'
+                'padding:2px 10px;font-size:0.7rem;font-weight:600;">'
                 "Churn</span>"
             )
         return (
-            '<span style="background:#edf7f0;color:#1e8449;border:1px solid #b7dfc5;'
-            'border-radius:999px;padding:2px 10px;font-size:0.7rem;font-weight:600;">'
+            '<span style="background:#edf7f0;color:#1e8449;'
+            'border:1px solid #b7dfc5;border-radius:999px;'
+            'padding:2px 10px;font-size:0.7rem;font-weight:600;">'
             "No Churn</span>"
         )
 

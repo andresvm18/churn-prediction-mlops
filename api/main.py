@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI application
 app = FastAPI(
     title="Customer Churn Prediction API",
-    description="Predicts the probability that a customer will churn based on their profile.",
+    description="Predicts customer churn probability based on profile.",
     version="2.3.0",
 )
 

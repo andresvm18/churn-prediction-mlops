@@ -2,7 +2,6 @@ import os
 import tempfile
 import pytest
 from fastapi.testclient import TestClient
-from api.database import init_db
 
 from api.main import app
 
@@ -338,7 +337,9 @@ class TestDatabaseCoverage:
         # Verify history is now empty
         resp = client.get("/history?limit=100")
         assert resp.status_code == 200
-        assert resp.json() == []  # Should return empty list
+        assert resp.json()["rows"] == []  # Should return empty list
+        
+        
 
     @skip_if_no_model
     def test_save_prediction_failure_is_silent(self, high_risk_customer):
@@ -359,14 +360,6 @@ class TestDatabaseCoverage:
         resp = client.get("/history?limit=1")
         assert resp.status_code == 200
         assert len(resp.json()["rows"]) >= 1
-
-    @skip_if_no_model
-    def test_history_empty_after_clear(self, high_risk_customer):
-        client.post("/predict", json=high_risk_customer)
-        client.delete("/history")
-        resp = client.get("/history?limit=100")
-        assert resp.status_code == 200
-        assert resp.json()["rows"] == []
 
 
 # Helper function to create a CSV with the specified number of rows.
