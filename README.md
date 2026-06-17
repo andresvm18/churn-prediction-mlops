@@ -123,9 +123,10 @@ Multi-page interface with sidebar navigation:
 - Summary metrics: total predictions, churn rate, average probability, high risk count
 - Risk breakdown (High / Medium / Low counts)
 - Analytics charts: daily churn rate over time and probability distribution by risk range
-- Filterable table by risk level, prediction outcome, and row limit
+- Paginated table: 25 rows per page with Previous / Next / First controls
 - Colored badges for Prediction (Churn / No Churn) and Risk level
-- CSV export of filtered results
+- Filters by risk level and prediction outcome
+- CSV export of current page
 - Clear history with confirmation dialog
 - Both single and batch predictions are logged automatically
 
@@ -341,9 +342,17 @@ Returns: churn_predictions.csv with all original columns + prediction results
 
 **Prediction History**
 ~~~
-GET /history?limit=100&risk_level=High&prediction=1
+GET /history?limit=25&offset=0&risk_level=High&prediction=1
 GET /history/stats
 DELETE /history
+
+Response (GET /history):
+{
+  "rows": [...],
+  "total": 142,
+  "limit": 25,
+  "offset": 0
+}
 ~~~
 
 Limit: 1 000 rows per batch request.
