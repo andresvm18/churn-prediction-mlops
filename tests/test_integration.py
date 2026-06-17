@@ -338,8 +338,7 @@ class TestDatabaseCoverage:
         resp = client.get("/history?limit=100")
         assert resp.status_code == 200
         assert resp.json()["rows"] == []  # Should return empty list
-        
-        
+
 
     @skip_if_no_model
     def test_save_prediction_failure_is_silent(self, high_risk_customer):
