@@ -8,15 +8,19 @@ data/processed/
 
 .DS_Store
 
+# Test / coverage artifacts
+test_batch.csv
+scripts/threshold_analysis/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+
 # MLflow
 mlruns/
 mlflow.db
 mlflow.db-wal
 mlflow.db-shm
-
-# Test artifacts
-test_batch.csv
-scripts/threshold_analysis/
 
 # Optuna
 optuna.db
