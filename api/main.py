@@ -26,23 +26,38 @@ app = FastAPI(
 
 # Expected columns for batch CSV uploads
 BATCH_COLUMNS = [
-    "gender", "senior_citizen", "partner", "dependents", "tenure_months",
-    "phone_service", "multiple_lines", "internet_service", "online_security",
-    "online_backup", "device_protection", "tech_support", "streaming_tv",
-    "streaming_movies", "contract", "paperless_billing", "payment_method",
-    "monthly_charges", "total_charges",
+    "gender",
+    "senior_citizen",
+    "partner",
+    "dependents",
+    "tenure_months",
+    "phone_service",
+    "multiple_lines",
+    "internet_service",
+    "online_security",
+    "online_backup",
+    "device_protection",
+    "tech_support",
+    "streaming_tv",
+    "streaming_movies",
+    "contract",
+    "paperless_billing",
+    "payment_method",
+    "monthly_charges",
+    "total_charges",
 ]
 
 
-# Startup 
+# Startup
 @asynccontextmanager
 async def lifespan(app):
-    init_db() # Creates tables if they don't exist
+    init_db()  # Creates tables if they don't exist
     logger.info("API startup complete.")
     yield
     logger.info("API shutdown.")
 
-# Helpers 
+
+# Helpers
 def _customer_from_row(row: pd.Series) -> CustomerData:
     return CustomerData(
         gender=str(row["gender"]),
@@ -75,11 +90,11 @@ def _validate_csv(df: pd.DataFrame) -> None:
             status_code=422,
             detail=f"CSV is missing required columns: {sorted(missing_cols)}",
         )
-    
+
     # Check if file is empty
     if len(df) == 0:
         raise HTTPException(status_code=400, detail="CSV file is empty.")
-    
+
     # Enforce row limit for performance
     if len(df) > 1000:
         raise HTTPException(
@@ -92,12 +107,12 @@ async def _read_csv(file: UploadFile) -> pd.DataFrame:
     # Validate file type
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are supported.")
-    
+
     try:
         # Read and decode file contents
         contents = await file.read()
         df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
-        
+
         # Normalize column names to lowercase for consistency
         df.columns = df.columns.str.lower().str.strip()
         return df
@@ -123,7 +138,7 @@ def predict_churn(customer_data: CustomerData):
     try:
         # Get prediction from model
         result = predict_customer_churn(customer_data)
-        
+
         # Save to database for history tracking
         save_prediction(customer_data, result)
         return result
@@ -159,6 +174,7 @@ def get_history(
     prediction: int | None = None,
 ):
     from api.database import get_predictions, count_predictions
+
     rows = get_predictions(
         limit=limit,
         offset=offset,
@@ -172,12 +188,14 @@ def get_history(
 @app.get("/history/stats")
 def get_history_stats():
     from api.database import get_summary_stats
+
     return get_summary_stats()
 
 
 @app.delete("/history")
 def clear_history_endpoint():
     from api.database import clear_history
+
     deleted = clear_history()
     return {"deleted": deleted}
 
@@ -226,7 +244,7 @@ async def predict_batch_download(file: UploadFile = File(...)):
     _validate_csv(df)
 
     predictions = []
-    
+
     # Process each row
     for idx, row in df.iterrows():
         try:
@@ -235,25 +253,36 @@ async def predict_batch_download(file: UploadFile = File(...)):
             result = predict_customer_churn(customer)
             save_prediction(customer, result)
             # Add original data plus predictions
-            predictions.append({
-                **row.to_dict(),
-                "prediction":        result["prediction"],
-                "prediction_label":  result["prediction_label"],
-                "churn_probability": result["churn_probability"],
-                "risk_level":        result["risk_level"],
-                "recommendation":    result["recommendation"],
-                "top_factors":       " | ".join(result["top_factors"]),  # Join list to string
-                "status":            "ok",
-                "error":             "",
-            })
+            predictions.append(
+                {
+                    **row.to_dict(),
+                    "prediction": result["prediction"],
+                    "prediction_label": result["prediction_label"],
+                    "churn_probability": result["churn_probability"],
+                    "risk_level": result["risk_level"],
+                    "recommendation": result["recommendation"],
+                    "top_factors": " | ".join(
+                        result["top_factors"]
+                    ),  # Join list to string
+                    "status": "ok",
+                    "error": "",
+                }
+            )
         except Exception as exc:
             # Add failed prediction with error details
-            predictions.append({
-                **row.to_dict(),
-                "prediction": "", "prediction_label": "", "churn_probability": "",
-                "risk_level": "", "recommendation":   "", "top_factors": "",
-                "status": "error", "error": str(exc),
-            })
+            predictions.append(
+                {
+                    **row.to_dict(),
+                    "prediction": "",
+                    "prediction_label": "",
+                    "churn_probability": "",
+                    "risk_level": "",
+                    "recommendation": "",
+                    "top_factors": "",
+                    "status": "error",
+                    "error": str(exc),
+                }
+            )
             logger.warning("Row %d failed: %s", idx, exc)
 
     # Convert to DataFrame and CSV

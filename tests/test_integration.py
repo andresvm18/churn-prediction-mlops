@@ -13,9 +13,8 @@ os.environ["DB_PATH"] = TEST_DB
 client = TestClient(app)
 
 # Check if model artifacts exist
-MODEL_AVAILABLE = (
-    os.path.exists("src/models/churn_model.pkl")
-    and os.path.exists("src/models/label_encoders.pkl")
+MODEL_AVAILABLE = os.path.exists("src/models/churn_model.pkl") and os.path.exists(
+    "src/models/label_encoders.pkl"
 )
 
 # Decorator to skip tests when model files are missing
@@ -23,17 +22,19 @@ skip_if_no_model = pytest.mark.skipif(
     not MODEL_AVAILABLE,
     reason="Model artifacts not found — run scripts/train_model.py first",
 )
-    
+
+
 # Fixtures
 @pytest.fixture(autouse=True, scope="session")
 def setup_database():
     from api.database import init_db
+
     init_db()
     yield
     if os.path.exists(TEST_DB):
         os.remove(TEST_DB)
-    
-    
+
+
 @pytest.fixture
 def high_risk_customer():
     return {
@@ -107,8 +108,12 @@ class TestFullPredictionPipeline:
         resp = client.post("/predict", json=high_risk_customer)
         data = resp.json()
         required_fields = [
-            "prediction", "prediction_label", "churn_probability",
-            "risk_level", "recommendation", "top_factors",
+            "prediction",
+            "prediction_label",
+            "churn_probability",
+            "risk_level",
+            "recommendation",
+            "top_factors",
         ]
         for field in required_fields:
             assert field in data, f"Missing field: {field}"
@@ -128,12 +133,25 @@ class TestFullPredictionPipeline:
     @skip_if_no_model
     def test_top_factors_reference_real_columns(self, high_risk_customer):
         known_columns = {
-            "Gender", "Senior Citizen", "Partner", "Dependents",
-            "Tenure Months", "Phone Service", "Multiple Lines",
-            "Internet Service", "Online Security", "Online Backup",
-            "Device Protection", "Tech Support", "Streaming TV",
-            "Streaming Movies", "Contract", "Paperless Billing",
-            "Payment Method", "Monthly Charges", "Total Charges",
+            "Gender",
+            "Senior Citizen",
+            "Partner",
+            "Dependents",
+            "Tenure Months",
+            "Phone Service",
+            "Multiple Lines",
+            "Internet Service",
+            "Online Security",
+            "Online Backup",
+            "Device Protection",
+            "Tech Support",
+            "Streaming TV",
+            "Streaming Movies",
+            "Contract",
+            "Paperless Billing",
+            "Payment Method",
+            "Monthly Charges",
+            "Total Charges",
         }
         resp = client.post("/predict", json=high_risk_customer)
         for factor in resp.json()["top_factors"]:
@@ -191,8 +209,15 @@ class TestHistoryIntegration:
         resp = client.get("/history/stats")
         assert resp.status_code == 200
         data = resp.json()
-        for key in ["total", "churn_count", "churn_rate", "avg_probability",
-                    "high_risk", "medium_risk", "low_risk"]:
+        for key in [
+            "total",
+            "churn_count",
+            "churn_rate",
+            "avg_probability",
+            "high_risk",
+            "medium_risk",
+            "low_risk",
+        ]:
             assert key in data, f"Missing stats key: {key}"
 
     @skip_if_no_model
@@ -275,13 +300,16 @@ class TestBatchIntegration:
         # Parse CSV and verify columns
         import io
         import pandas as pd
+
         result_df = pd.read_csv(io.StringIO(resp.text))
         # Check prediction columns exist
         assert "prediction_label" in result_df.columns
         assert "churn_probability" in result_df.columns
         assert "risk_level" in result_df.columns
-        
+
+
 # Database coverage
+
 
 class TestDatabaseCoverage:
 
@@ -294,7 +322,7 @@ class TestDatabaseCoverage:
         resp = client.delete("/history")
         assert resp.status_code == 200
         data = resp.json()
-        
+
         # Verify response contains deletion count
         assert "deleted" in data
         assert isinstance(data["deleted"], int)
@@ -303,7 +331,7 @@ class TestDatabaseCoverage:
     def test_history_empty_after_clear(self, high_risk_customer):
         # Create a prediction record
         client.post("/predict", json=high_risk_customer)
-        
+
         # Clear all history
         client.delete("/history")
 
@@ -315,16 +343,16 @@ class TestDatabaseCoverage:
     @skip_if_no_model
     def test_save_prediction_failure_is_silent(self, high_risk_customer):
         from unittest.mock import patch
-        
+
         # Mock database connection to raise an error
         with patch("api.database.get_connection", side_effect=Exception("DB error")):
             # Prediction should still succeed despite DB error
             resp = client.post("/predict", json=high_risk_customer)
-        
+
         # Verify prediction still returns successfully
         assert resp.status_code == 200
         assert "churn_probability" in resp.json()
-    
+
     @skip_if_no_model
     def test_prediction_is_saved_to_history(self, high_risk_customer):
         client.post("/predict", json=high_risk_customer)
@@ -355,7 +383,8 @@ def _create_large_csv(num_rows: int = 1001) -> str:
         "Month-to-month,Yes,Electronic check,95.5,1146.0\n"
     )
     return header + row * num_rows
-    
+
+
 # Batch validation coverage
 class TestBatchValidationCoverage:
 
@@ -425,11 +454,10 @@ class TestBatchValidationCoverage:
         )
         assert resp.status_code == 400
 
-
     def test_batch_over_limit_returns_400(self):
         # A CSV with more than 1000 rows must return 400.
         csv_content = _create_large_csv(1001)  # 1 row over limit
-        
+
         resp = client.post(
             "/predict/batch",
             files={"file": ("big.csv", csv_content.encode(), "text/csv")},
@@ -437,11 +465,10 @@ class TestBatchValidationCoverage:
         assert resp.status_code == 400
         assert "1000" in resp.json()["detail"]
 
-
     def test_batch_download_over_limit_returns_400(self):
         # A CSV with more than 1000 rows to download endpoint must return 400."""
         csv_content = _create_large_csv(1001)  # 1 row over limit
-        
+
         resp = client.post(
             "/predict/batch/download",
             files={"file": ("big.csv", csv_content.encode(), "text/csv")},

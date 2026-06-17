@@ -42,33 +42,37 @@ def init_db() -> None:
             )
             """
         )
-        
+
         # Check for missing columns and add them (schema migration)
         existing_cols = {
-            row[1]
-            for row in conn.execute("PRAGMA table_info(predictions)").fetchall()
+            row[1] for row in conn.execute("PRAGMA table_info(predictions)").fetchall()
         }
-        
+
         # Required columns with their SQLite types
         required_cols = {
-            "gender": "TEXT", "senior_citizen": "INTEGER",
-            "partner": "TEXT", "dependents": "TEXT",
-            "tenure_months": "INTEGER", "internet_service": "TEXT",
-            "contract": "TEXT", "monthly_charges": "REAL",
-            "total_charges": "REAL", "prediction": "INTEGER",
-            "prediction_label": "TEXT", "churn_probability": "REAL",
-            "risk_level": "TEXT", "recommendation": "TEXT",
+            "gender": "TEXT",
+            "senior_citizen": "INTEGER",
+            "partner": "TEXT",
+            "dependents": "TEXT",
+            "tenure_months": "INTEGER",
+            "internet_service": "TEXT",
+            "contract": "TEXT",
+            "monthly_charges": "REAL",
+            "total_charges": "REAL",
+            "prediction": "INTEGER",
+            "prediction_label": "TEXT",
+            "churn_probability": "REAL",
+            "risk_level": "TEXT",
+            "recommendation": "TEXT",
             "top_factors": "TEXT",
         }
-        
+
         # Add any missing columns
         for col, col_type in required_cols.items():
             if col not in existing_cols:
-                conn.execute(
-                    f"ALTER TABLE predictions ADD COLUMN {col} {col_type}"
-                )
+                conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} {col_type}")
                 logger.info("Added missing column '%s' to predictions table", col)
-        
+
         conn.commit()
     logger.info("Database initialized at %s", DB_PATH)
 
@@ -166,8 +170,8 @@ def count_predictions(
 
     with get_connection() as conn:
         return conn.execute(query, params).fetchone()[0]
-    
-    
+
+
 def get_summary_stats() -> dict:
     with get_connection() as conn:
         # Get total number of predictions
@@ -205,13 +209,13 @@ def get_summary_stats() -> dict:
 
     # Return formatted statistics
     return {
-        "total":           total,
-        "churn_count":     churn_count,
-        "churn_rate":      round(churn_count / total * 100, 1),
+        "total": total,
+        "churn_count": churn_count,
+        "churn_rate": round(churn_count / total * 100, 1),
         "avg_probability": round(avg_prob * 100, 1),
-        "high_risk":       risk_map.get("High", 0),
-        "medium_risk":     risk_map.get("Medium", 0),
-        "low_risk":        risk_map.get("Low", 0),
+        "high_risk": risk_map.get("High", 0),
+        "medium_risk": risk_map.get("Medium", 0),
+        "low_risk": risk_map.get("Low", 0),
     }
 
 

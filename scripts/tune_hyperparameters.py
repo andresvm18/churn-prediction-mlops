@@ -44,10 +44,11 @@ OUTPUT_PATH = "scripts/tuning_results/best_params.json"
 
 # Data loading
 
+
 def load_splits() -> tuple:
     logger.info("Loading data from %s", RAW_DATA_PATH)
     df = pd.read_excel(RAW_DATA_PATH)
-    
+
     # Clean column names
     df.columns = df.columns.str.strip()
 
@@ -81,29 +82,32 @@ def load_splits() -> tuple:
 
     logger.info(
         "Train: %d rows | Test: %d rows | After SMOTE: %d rows",
-        len(X_train), len(X_test), len(X_train_bal),
+        len(X_train),
+        len(X_test),
+        len(X_train_bal),
     )
     return X_train_bal, X_test, y_train_bal, y_test, encoders
 
 
 # Objective
 
+
 def make_objective(X_train, X_test, y_train, y_test):
 
-    def objective(trial: optuna.Trial) -> float:        
+    def objective(trial: optuna.Trial) -> float:
         # Define hyperparameter search space
         params = {
-            "n_estimators":      trial.suggest_int("n_estimators", 100, 500),
-            "max_depth":         trial.suggest_int("max_depth", 3, 10),
-            "learning_rate":     trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
-            "subsample":         trial.suggest_float("subsample", 0.5, 1.0),
-            "colsample_bytree":  trial.suggest_float("colsample_bytree", 0.5, 1.0),
-            "min_child_weight":  trial.suggest_int("min_child_weight", 1, 10),
-            "gamma":             trial.suggest_float("gamma", 0.0, 1.0),
-            "reg_alpha":         trial.suggest_float("reg_alpha", 0.0, 1.0),
-            "reg_lambda":        trial.suggest_float("reg_lambda", 0.5, 2.0),
-            "random_state":      42,
-            "eval_metric":       "logloss",
+            "n_estimators": trial.suggest_int("n_estimators", 100, 500),
+            "max_depth": trial.suggest_int("max_depth", 3, 10),
+            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+            "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+            "min_child_weight": trial.suggest_int("min_child_weight", 1, 10),
+            "gamma": trial.suggest_float("gamma", 0.0, 1.0),
+            "reg_alpha": trial.suggest_float("reg_alpha", 0.0, 1.0),
+            "reg_lambda": trial.suggest_float("reg_lambda", 0.5, 2.0),
+            "random_state": 42,
+            "eval_metric": "logloss",
         }
 
         # Train model with current parameters
@@ -133,15 +137,16 @@ def make_objective(X_train, X_test, y_train, y_test):
 
 # Results
 
+
 def save_best_params(study: optuna.Study) -> None:
     # Create output directory if it doesn't exist
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
 
     # Prepare output data
     output = {
-        "best_value":  round(study.best_value, 4),
+        "best_value": round(study.best_value, 4),
         "best_params": study.best_params,
-        "n_trials":    len(study.trials),
+        "n_trials": len(study.trials),
     }
 
     # Save to JSON file
@@ -188,7 +193,7 @@ def main(n_trials: int = 50) -> None:
             study_name="churn-xgboost",
             sampler=optuna.samplers.TPESampler(seed=42),
         )
-        
+
         # Run optimization
         study.optimize(
             make_objective(X_train, X_test, y_train, y_test),
@@ -211,7 +216,9 @@ def main(n_trials: int = 50) -> None:
 
 if __name__ == "__main__":
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Tune XGBoost hyperparameters with Optuna.")
+    parser = argparse.ArgumentParser(
+        description="Tune XGBoost hyperparameters with Optuna."
+    )
     parser.add_argument(
         "--trials",
         type=int,
@@ -219,6 +226,6 @@ if __name__ == "__main__":
         help="Number of Optuna trials (default: 50)",
     )
     args = parser.parse_args()
-    
+
     # Run main function
     main(n_trials=args.trials)

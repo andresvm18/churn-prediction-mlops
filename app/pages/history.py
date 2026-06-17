@@ -14,7 +14,8 @@ if css_path.exists():
     with open(css_path, "r", encoding="utf-8") as f:
         st.html(f"<style>{f.read()}</style>")
 
-st.html("""
+st.html(
+    """
 <div class="ci-header-wrap">
     <div class="ci-logo-mark">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -30,7 +31,8 @@ st.html("""
     </div>
     <div class="ci-header-badge">● ML Model v2.3</div>
 </div>
-""")
+"""
+)
 
 
 def fetch_stats() -> dict:
@@ -91,11 +93,13 @@ def build_table(rows: list[dict]) -> str:
 
     def risk_badge(level: str) -> str:
         styles = {
-            "High":   "background:#fdf0ef;color:#c0392b;border:1px solid #f5c6c2;",
+            "High": "background:#fdf0ef;color:#c0392b;border:1px solid #f5c6c2;",
             "Medium": "background:#fef9ec;color:#d68910;border:1px solid #f5e0a0;",
-            "Low":    "background:#edf7f0;color:#1e8449;border:1px solid #b7dfc5;",
+            "Low": "background:#edf7f0;color:#1e8449;border:1px solid #b7dfc5;",
         }
-        s = styles.get(level, "background:#f0ece5;color:#5c574f;border:1px solid #e2ddd6;")
+        s = styles.get(
+            level, "background:#f0ece5;color:#5c574f;border:1px solid #e2ddd6;"
+        )
         return (
             f'<span style="{s}border-radius:999px;padding:2px 8px;'
             f'font-size:0.68rem;font-weight:600;">{level}</span>'
@@ -131,8 +135,16 @@ def build_table(rows: list[dict]) -> str:
     )
 
     headers = [
-        "Date", "Gender", "Tenure", "Contract", "Internet",
-        "Monthly $", "Prediction", "Probability", "Risk", "Top Factors",
+        "Date",
+        "Gender",
+        "Tenure",
+        "Contract",
+        "Internet",
+        "Monthly $",
+        "Prediction",
+        "Probability",
+        "Risk",
+        "Top Factors",
     ]
     header_html = "".join(f'<th style="{th}">{h}</th>' for h in headers)
 
@@ -142,8 +154,8 @@ def build_table(rows: list[dict]) -> str:
         prob = row.get("churn_probability", 0)
         rows_html += (
             f'<tr style="background:{bg};" '
-            f'onmouseover="this.style.background=\'#f8f6f2\'" '
-            f'onmouseout="this.style.background=\'{bg}\'">'
+            f"onmouseover=\"this.style.background='#f8f6f2'\" "
+            f"onmouseout=\"this.style.background='{bg}'\">"
             f'<td style="{td}">{fmt_date(row.get("created_at", ""))}</td>'
             f'<td style="{td}">{row.get("gender", "")}</td>'
             f'<td style="{td}">{row.get("tenure_months", "")}</td>'
@@ -173,14 +185,19 @@ CHART_LAYOUT = dict(
     font=dict(color="#1a1714", family="Outfit, sans-serif", size=12),
     margin=dict(l=40, r=20, t=30, b=40),
     height=240,
-    xaxis=dict(gridcolor="#e2ddd6", linecolor="#e2ddd6", tickfont=dict(color="#5c574f")),
-    yaxis=dict(gridcolor="#e2ddd6", linecolor="#e2ddd6", tickfont=dict(color="#5c574f")),
+    xaxis=dict(
+        gridcolor="#e2ddd6", linecolor="#e2ddd6", tickfont=dict(color="#5c574f")
+    ),
+    yaxis=dict(
+        gridcolor="#e2ddd6", linecolor="#e2ddd6", tickfont=dict(color="#5c574f")
+    ),
 )
 
 stats = fetch_stats()
 
 if not stats or stats.get("total", 0) == 0:
-    st.html("""
+    st.html(
+        """
     <div class="ci-empty-state">
         <div class="ci-empty-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -195,22 +212,23 @@ if not stats or stats.get("total", 0) == 0:
             and it will appear here automatically.
         </p>
     </div>
-    """)
+    """
+    )
     st.stop()
 
 st.html('<div class="ci-section">📊 Summary</div>')
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Total predictions", stats["total"])
-c2.metric("Predicted churn",   f"{stats['churn_count']} ({stats['churn_rate']}%)")
-c3.metric("Avg probability",   f"{stats['avg_probability']}%")
-c4.metric("High risk",         stats["high_risk"])
+c2.metric("Predicted churn", f"{stats['churn_count']} ({stats['churn_rate']}%)")
+c3.metric("Avg probability", f"{stats['avg_probability']}%")
+c4.metric("High risk", stats["high_risk"])
 st.html('<hr class="ci-divider-light">')
 
 st.html('<div class="ci-section">🎯 Risk breakdown</div>')
 rb1, rb2, rb3 = st.columns(3)
-rb1.metric("🔴 High risk",   stats["high_risk"])
+rb1.metric("🔴 High risk", stats["high_risk"])
 rb2.metric("🟡 Medium risk", stats["medium_risk"])
-rb3.metric("🟢 Low risk",    stats["low_risk"])
+rb3.metric("🟢 Low risk", stats["low_risk"])
 st.html('<hr class="ci-divider-light">')
 
 st.html('<div class="ci-section">📈 Analytics</div>')
@@ -240,14 +258,16 @@ if chart_data:
 
         if len(temporal) >= 2:
             fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=temporal["date"],
-                y=temporal["avg_probability"],
-                mode="lines+markers",
-                line=dict(color="#c0392b", width=2),
-                marker=dict(color="#c0392b", size=6),
-                hovertemplate="%{x|%b %d}<br>%{y:.1f}%<extra></extra>",
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=temporal["date"],
+                    y=temporal["avg_probability"],
+                    mode="lines+markers",
+                    line=dict(color="#c0392b", width=2),
+                    marker=dict(color="#c0392b", size=6),
+                    hovertemplate="%{x|%b %d}<br>%{y:.1f}%<extra></extra>",
+                )
+            )
             fig.update_layout(
                 **CHART_LAYOUT,
                 yaxis_title="Avg churn probability (%)",
@@ -268,8 +288,16 @@ if chart_data:
         st.caption("How predictions are distributed across risk ranges.")
         bins = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.01]
         labels = [
-            "0-10%", "10-20%", "20-30%", "30-40%", "40-50%",
-            "50-60%", "60-70%", "70-80%", "80-90%", "90-100%",
+            "0-10%",
+            "10-20%",
+            "20-30%",
+            "30-40%",
+            "40-50%",
+            "50-60%",
+            "60-70%",
+            "70-80%",
+            "80-90%",
+            "90-100%",
         ]
         chart_df["bucket"] = pd.cut(
             chart_df["churn_probability"], bins=bins, labels=labels, right=False
@@ -286,12 +314,14 @@ if chart_data:
             for i in range(len(dist))
         ]
         fig2 = go.Figure()
-        fig2.add_trace(go.Bar(
-            x=dist["range"],
-            y=dist["count"],
-            marker_color=bar_colors,
-            hovertemplate="%{x}<br>%{y} predictions<extra></extra>",
-        ))
+        fig2.add_trace(
+            go.Bar(
+                x=dist["range"],
+                y=dist["count"],
+                marker_color=bar_colors,
+                hovertemplate="%{x}<br>%{y} predictions<extra></extra>",
+            )
+        )
         fig2.update_layout(
             **CHART_LAYOUT,
             yaxis_title="Number of predictions",

@@ -25,7 +25,7 @@ st.markdown(
 
 single_page = st.Page("pages/single.py", title="Single Prediction", icon="📊")
 batch_page = st.Page("pages/batch.py", title="Batch Prediction", icon="📂")
-history_page = st.Page("pages/history.py", title="History",           icon="🕐")
+history_page = st.Page("pages/history.py", title="History", icon="🕐")
 
 # Create navigation menu with both pages
 pg = st.navigation([single_page, batch_page, history_page])
