@@ -653,27 +653,6 @@ button[data-testid="stBaseButton-headerNoPadding"] svg {
     flex-shrink: 0 !important;
 }
 
-[data-testid="stButton"]:has(button[data-testid="stBaseButton-secondary"]:not([key])) button,
-button[key="clear_history_btn"] {
-    background: #c0392b !important;
-    color: #ffffff !important;
-}
-button[key="clear_history_btn"]:hover {
-    background: #a93226 !important;
-    box-shadow: 0 6px 20px rgba(192,57,43,0.28) !important;
-}
-
-div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2)
-    [data-testid="stButton"] > button {
-    background: #c0392b !important;
-    color: #ffffff !important;
-}
-div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2)
-    [data-testid="stButton"] > button:hover {
-    background: #a93226 !important;
-    box-shadow: 0 6px 20px rgba(192,57,43,0.28) !important;
-}
-
 [data-testid="stAlert"][kind="info"],
 div[data-testid="stAlert"] {
     background: var(--surface-2) !important;

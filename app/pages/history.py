@@ -367,7 +367,7 @@ with nav2:
 
 with nav3:
     if st.button(
-        "⤒ First",
+        "↑ First",
         use_container_width=True,
         key="first_page",
         disabled=current_page == 0,
@@ -395,7 +395,7 @@ with btn_col1:
 
 with btn_col2:
     if st.button(
-        "🗑 Clear history",
+        "Clear history",
         use_container_width=True,
         key="clear_history_btn",
     ):
