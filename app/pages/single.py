@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from api.config import BASELINE_CHURN_RATE # noqa: E402
+from api.config import BASELINE_CHURN_RATE  # noqa: E402
 
 import requests  # noqa: E402
 import streamlit as st  # noqa: E402
