@@ -3,7 +3,7 @@
 # Testing
 pytest==8.3.5
 pytest-cov==6.1.0
-httpx2
+httpx==0.28.1
 
 # Notebooks
 jupyter==1.1.1
@@ -18,13 +18,13 @@ imbalanced-learn==0.13.0
 openpyxl==3.1.5
 
 # Experiment tracking
-mlflow
+mlflow==2.20.1
 
 # Hyperparameter tuning
-optuna
+optuna==4.1.0
 
 # Environment
-python-dotenv
+python-dotenv==1.0.1
 
 # Code quality
 black==25.1.0

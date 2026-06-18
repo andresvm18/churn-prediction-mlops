@@ -1,13 +1,15 @@
 import sys
 import os
 
-from api.config import BASELINE_CHURN_RATE
 from pathlib import Path
 
-import requests
-import streamlit as st
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
+from api.config import BASELINE_CHURN_RATE # noqa: E402
+
+import requests  # noqa: E402
+import streamlit as st  # noqa: E402
+
 
 # Get API URL from environment variable or use default
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")

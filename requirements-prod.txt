@@ -1,31 +1,18 @@
--r requirements-prod.txt
+# API
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pydantic==2.10.4
 
-# Testing
-pytest==8.3.5
-pytest-cov==6.1.0
-httpx==0.28.1
+# Model Inference
+pandas==2.2.3
+numpy==2.1.3
+scikit-learn==1.6.0
+xgboost==2.1.3
+joblib==1.4.2
+shap==0.46.0
 
-# Notebooks
-jupyter==1.1.1
-notebook==7.4.2
-
-# Visualization
-matplotlib==3.10.3
-seaborn==0.13.2
-
-# Training extras
-imbalanced-learn==0.13.0
-openpyxl==3.1.5
-
-# Experiment tracking
-mlflow==2.20.1
-
-# Hyperparameter tuning
-optuna==4.1.0
-
-# Environment
-python-dotenv==1.0.1
-
-# Code quality
-black==25.1.0
-flake8==7.2.0
+# Dashboard
+streamlit==1.41.1
+requests==2.32.3
+plotly==5.24.1
