@@ -6,17 +6,16 @@ import pandas as pd
 import requests
 import streamlit as st
 
-API_BATCH_URL = os.getenv(
-    "API_BATCH_URL", "http://127.0.0.1:8000/predict/batch/download"
-)
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
+API_BATCH_URL = f"{API_URL}/predict/batch/download"
 
-# ─── Load CSS ─────────────────────────────────────────────────────────────────
+# Load CSS
 css_path = Path(__file__).parent.parent / "styles.css"
 if css_path.exists():
     with open(css_path, "r", encoding="utf-8") as f:
         st.html(f"<style>{f.read()}</style>")
 
-# ─── Header ───────────────────────────────────────────────────────────────────
+# Header
 st.html(
     """
 <div class="ci-header-wrap">
@@ -36,7 +35,7 @@ st.html(
 """
 )
 
-# ─── Template columns ──────────────────────────────────────────────────────────
+# Template columns
 TEMPLATE_COLS = [
     "gender",
     "senior_citizen",
@@ -103,7 +102,7 @@ SAMPLE_ROWS = [
     ],
 ]
 
-# ─── How it works card ─────────────────────────────────────────────────────────
+# How it works card
 st.html(
     """
 <div class="ci-snapshot-card">
@@ -121,7 +120,7 @@ st.html(
 
 st.html('<hr class="ci-divider-light">')
 
-# ─── Template download ─────────────────────────────────────────────────────────
+# Template download
 template_csv = pd.DataFrame(SAMPLE_ROWS, columns=TEMPLATE_COLS).to_csv(index=False)
 
 # Constrain button width to left third so it doesn't stretch full page
@@ -138,7 +137,7 @@ with col_dl:
 
 st.html('<hr class="ci-divider-light">')
 
-# ─── File upload ───────────────────────────────────────────────────────────────
+# File upload
 uploaded_file = st.file_uploader(
     "Upload your CSV file",
     type=["csv"],
@@ -153,7 +152,7 @@ if uploaded_file is not None:
         st.error(f"Could not read file: {e}")
         st.stop()
 
-    # ── File info + preview ────────────────────────────────────────────────────
+    # File info + preview
     st.html(
         f"""
     <div class="ci-snapshot-card">
@@ -192,7 +191,7 @@ if uploaded_file is not None:
                     safe = (result_df["prediction"] == 0).sum()
                     errors = (result_df["status"] == "error").sum()
 
-                    # ── Summary metrics ────────────────────────────────────────
+                    # Summary metrics
                     st.html('<div class="ci-section">📊 Summary</div>')
                     c1, c2, c3, c4 = st.columns(4)
                     c1.metric("Total customers", total)
@@ -204,7 +203,7 @@ if uploaded_file is not None:
 
                     st.html('<hr class="ci-divider-light">')
 
-                    # ── Risk breakdown ─────────────────────────────────────────
+                    # Risk breakdown
                     if "risk_level" in result_df.columns:
                         st.html('<div class="ci-section">🎯 Risk breakdown</div>')
                         risk_counts = result_df["risk_level"].value_counts()
@@ -215,7 +214,7 @@ if uploaded_file is not None:
 
                         st.html('<hr class="ci-divider-light">')
 
-                    # ── Results table ──────────────────────────────────────────
+                    # Results table
                     st.html('<div class="ci-section">📋 Results</div>')
                     display_cols = [
                         "prediction_label",
@@ -230,7 +229,7 @@ if uploaded_file is not None:
 
                     st.html('<hr class="ci-divider-light">')
 
-                    # ── Download results ───────────────────────────────────────
+                    # Download results
                     col_res, _, _ = st.columns(3)
                     with col_res:
                         st.download_button(
@@ -257,7 +256,7 @@ if uploaded_file is not None:
             except Exception as e:
                 st.error(f"Unexpected error: {e}")
 
-# ─── Footer ───────────────────────────────────────────────────────────────────
+# Footer
 st.html(
     '<div class="ci-footer">'
     "Churn Intelligence · Powered by Machine Learning · v2.2"

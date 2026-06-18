@@ -12,7 +12,8 @@ import streamlit as st  # noqa: E402
 
 
 # Get API URL from environment variable or use default
-API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
+PREDICT_URL = f"{API_URL}/predict"
 
 # Load custom CSS styles
 css_path = Path(__file__).parent.parent / "styles.css"
@@ -492,7 +493,7 @@ if st.session_state.is_loading:
 
     try:
         # Send request to API
-        resp = requests.post(API_URL, json=payload, timeout=10)
+        resp = requests.post(PREDICT_URL, json=payload, timeout=10)
         if resp.status_code == 200:
             result = resp.json()
             st.session_state.top_factors = result.get("top_factors", [])

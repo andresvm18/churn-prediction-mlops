@@ -32,8 +32,7 @@ services:
       api:
         condition: service_healthy         # Wait for API health check to pass
     environment:
-      - API_URL=http://api:8000/predict                      # Single prediction endpoint
-      - API_BATCH_URL=http://api:8000/predict/batch/download # Batch prediction endpoint
+      - API_URL=http://api:8000
 
 # Volumes
 volumes:
